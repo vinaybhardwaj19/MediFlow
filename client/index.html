@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MediFlow — Smart Telemedicine & E-Pharmacy Platform</title>
+  <meta name="description" content="Full-stack telemedicine platform with AI-powered symptom triage, real-time video consultation, e-pharmacy with delivery tracking, and IoT-based health monitoring." />
+  <meta name="theme-color" content="#6366f1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏥</text></svg>" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <link rel="stylesheet" href="css/globals.css" />
+  <link rel="stylesheet" href="css/2036-spatial.css" />
+</head>
+<body>
+
+<!-- ── Navigation ─────────────────────────────────────────────────────────── -->
+<nav id="navbar">
+  <div class="nav-logo">🏥 MediFlow</div>
+  <div class="nav-links" id="nav-links">
+    <a class="nav-link" data-page="home" data-i18n="nav-home" href="#home">Home</a>
+    <a class="nav-link" data-page="dashboard" data-i18n="nav-dashboard" href="#dashboard">Dashboard</a>
+    <a class="nav-link" data-page="triage" data-i18n="nav-triage" href="#triage">Symptom Checker</a>
+    <a class="nav-link" data-page="pharmacy" data-i18n="nav-pharmacy" href="#pharmacy">Pharmacy</a>
+    <a class="nav-link" data-page="consultation" data-i18n="nav-consult" href="#consultation">Consult</a>
+    <button class="theme-toggle" id="theme-toggle" title="Toggle theme">
+      <span class="icon-moon">🌙</span>
+      <span class="icon-sun">☀️</span>
+    </button>
+    <button class="btn btn-outline btn-sm" id="lang-toggle-btn" title="Switch language">🌐 EN</button>
+    <button class="btn btn-outline btn-sm" id="voice-nav-btn" title="Voice Navigation">🎤</button>
+    <button class="btn btn-danger btn-sm" id="sos-btn" title="Emergency SOS" style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:#ef4444;">🆘 SOS</button>
+    <button class="btn btn-primary btn-sm" id="nav-auth-btn" data-i18n="nav-signin">Sign In</button>
+    <button class="btn btn-outline btn-sm hidden" id="nav-logout-btn" data-i18n="nav-signout">Sign Out</button>
+  </div>
+</nav>
+
+<!-- ── Toast container ────────────────────────────────────────────────────── -->
+<div id="toast-container"></div>
+
+<!-- ── Hidden Sensing Canvas (PPG / Biometrics) ─────────────────────────── -->
+<canvas id="sensing-canvas" width="128" height="128" style="display:none;"></canvas>
+<video id="sensing-video" autoplay playsinline muted style="display:none;"></video>
+
+<!-- ── Ambient AI Alert Bar (injected by ambient-monitor.js) ─────────────── -->
+<div id="ambient-alert-bar">
+  <div class="alert-bar-inner advisory">
+    <div class="alert-bar-icon">🔔</div>
+    <div class="alert-bar-text">
+      <div class="alert-bar-title">Ambient AI Alert</div>
+      <div class="alert-bar-sub">Your wearable has detected an anomaly.</div>
+    </div>
+    <div class="alert-bar-actions">
+      <button class="alert-bar-btn primary" id="alert-bar-view">View Details</button>
+      <button class="alert-bar-btn dismiss" id="alert-bar-dismiss">✕</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     PAGE: LANDING
+     ══════════════════════════════════════════════════════════════════════ -->
+<div id="page-home" class="page">
+  <section class="hero">
+    <!-- Particle Canvas Background -->
+    <canvas id="hero-particles"></canvas>
+    <div>
+      <div class="hero-tag">
+        <span>🏥</span> AI-Powered Smart Healthcare Platform
+      </div>
+      <h1 class="hero-title">
+        Intelligent Telemedicine,<br/>
+        <span>For Modern Healthcare</span>
+      </h1>
+      <p class="hero-sub">
+        Real-time health monitoring via IoT wearables, ML-based symptom triage,
+        secure video consultations, and smart pharmacy delivery — 
+        a complete end-to-end telemedicine solution.
+      </p>
+      <div class="hero-btns">
+        <button class="btn btn-primary glow-pulse" id="hero-get-started">Get Started Free →</button>
+        <button class="btn btn-outline" id="hero-triage-btn">🧠 Try AI Triage</button>
+      </div>
+      <div class="feature-pill-grid">
+        <div class="feature-pill"><span class="feature-pill-icon">🧠</span>ML Symptom Triage</div>
+        <div class="feature-pill"><span class="feature-pill-icon">🔐</span>Secure Authentication</div>
+        <div class="feature-pill"><span class="feature-pill-icon">📹</span>WebRTC Video Consult</div>
+        <div class="feature-pill"><span class="feature-pill-icon">📡</span>IoT Health Monitoring</div>
+        <div class="feature-pill"><span class="feature-pill-icon">💊</span>Smart E-Pharmacy</div>
+        <div class="feature-pill"><span class="feature-pill-icon">🚚</span>Delivery Tracking</div>
+        <div class="feature-pill"><span class="feature-pill-icon">📊</span>Real-time Analytics</div>
+        <div class="feature-pill"><span class="feature-pill-icon">📋</span>Digital Prescriptions</div>
+      </div>
+      <!-- Animated Stats -->
+      <div class="hero-stats-bar reveal">
+        <div class="hero-stat">
+          <div class="hero-stat-value" id="hero-stat-patients">0</div>
+          <div class="hero-stat-label">Patients Served</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-value" id="hero-stat-doctors">0</div>
+          <div class="hero-stat-label">Specialists</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-value" id="hero-stat-triage">0</div>
+          <div class="hero-stat-label">Triage Accuracy</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-value" id="hero-stat-response">0</div>
+          <div class="hero-stat-label">Avg Response</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     PAGE: DASHBOARD
+     ══════════════════════════════════════════════════════════════════════ -->
+<div id="page-dashboard" class="page hidden">
+  <div class="container" style="max-width:1340px;">
+    <div class="dash-pro-grid">
+
+      <!-- ── Sidebar ──────────────────────────────────────────────────────── -->
+      <aside class="sidebar dash-pro-sidebar">
+        <div id="user-avatar" style="text-align:center;padding:16px 0;border-bottom:1px solid var(--border);margin-bottom:8px;">
+          <div style="font-size:2.5rem;">👤</div>
+          <div style="font-weight:600;margin-top:8px;" id="sidebar-name">Loading...</div>
+          <div style="font-size:.8rem;color:var(--text-secondary);" id="sidebar-role"></div>
+        </div>
+        <div class="sidebar-item active" data-section="overview"><span class="icon">📊</span>Overview</div>
+        <div class="sidebar-item" data-section="vitals" id="side-vitals"><span class="icon">❤️</span>Vitals &amp; Alerts</div>
+        <div class="sidebar-item" data-section="drone" id="side-drone"><span class="icon">🚁</span>Drone Tracker</div>
+        <div class="sidebar-item" data-section="queue" id="side-queue" style="display:none;"><span class="icon">👥</span>Patient Queue</div>
+        <div class="sidebar-item" data-section="inventory" id="side-inventory" style="display:none;"><span class="icon">📦</span>Inventory</div>
+        <div class="sidebar-item" data-section="appointments"><span class="icon">📅</span>Appointments</div>
+        <div class="sidebar-item" data-section="prescriptions"><span class="icon">📋</span>Prescriptions</div>
+        <div class="sidebar-item" data-section="orders"><span class="icon">📦</span>My Orders</div>
+        <div class="sidebar-item" data-section="identity"><span class="icon">🔐</span>Secure Identity</div>
+        <div style="margin-top:auto;padding-top:16px;border-top:1px solid var(--border);">
+            <button class="xr-toggle-btn" id="xr-toggle-btn" style="width:100%;justify-content:center;">
+            📊 Health Report
+          </button>
+        </div>
+      </aside>
+
+      <!-- ── Vitals Panel (top right) ─────────────────────────────────────── -->
+      <section id="dash-vitals" class="dash-pro-vitals">
+        <div class="vitals-panel">
+          <div class="vitals-header">
+            <div class="vitals-title">
+              <div class="vitals-status-dot" id="vitals-status-dot"></div>
+              Real-time Health Monitor
+              <span id="vitals-status-label" style="font-size:.75rem;font-weight:400;color:var(--text-secondary);">Connecting...</span>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;">
+              <button class="btn btn-outline btn-sm" id="real-sensor-btn">📷 Webcam PPG Sensor</button>
+              <button class="btn btn-outline btn-sm" id="sim-vitals-btn">▶ Demo Simulation</button>
+            </div>
+          </div>
+          
+          <!-- PPG Pulse HUD (New) -->
+          <div id="ppg-hud" class="hidden" style="background:rgba(0,0,0,.4);border:1px solid var(--primary);border-radius:var(--radius-sm);padding:12px;margin-bottom:20px;display:flex;align-items:center;gap:15px;">
+             <canvas id="ppg-graph" width="100" height="40" style="width:100px;height:40px;"></canvas>
+             <div>
+                <div style="font-size:.65rem;color:var(--primary);font-weight:700;text-transform:uppercase;">Webcam Heart Rate Analysis</div>
+                <div style="font-size:1.1rem;font-weight:800;" id="ppg-hr-val">Scanning...</div>
+             </div>
+             <div style="margin-left:auto;text-align:right;">
+                <div style="font-size:.6rem;color:var(--text-muted);">WEBCAM PPG LIVE</div>
+                <div id="ppg-quality" style="font-size:.7rem;color:var(--success);">QUAL: GOOD</div>
+             </div>
+          </div>
+
+          <div class="vitals-grid">
+            <div class="vital-tile hr" id="vital-tile-hr">
+              <div class="vital-label">Heart Rate</div>
+              <div class="vital-value hr" id="vv-hr">—</div>
+              <div class="vital-unit">bpm</div>
+              <div class="vital-trend" id="vt-hr"></div>
+            </div>
+            <div class="vital-tile spo2" id="vital-tile-spo2">
+              <div class="vital-label">SpO₂</div>
+              <div class="vital-value spo2" id="vv-spo2">—</div>
+              <div class="vital-unit">%</div>
+              <div class="vital-trend" id="vt-spo2"></div>
+            </div>
+            <div class="vital-tile bp" id="vital-tile-sbp">
+              <div class="vital-label">Sys. BP</div>
+              <div class="vital-value bp" id="vv-sbp">—</div>
+              <div class="vital-unit">mmHg</div>
+              <div class="vital-trend" id="vt-sbp"></div>
+            </div>
+            <div class="vital-tile temp" id="vital-tile-temp">
+              <div class="vital-label">Temperature</div>
+              <div class="vital-value temp" id="vv-temp">—</div>
+              <div class="vital-unit">°C</div>
+              <div class="vital-trend" id="vt-temp"></div>
+            </div>
+            <div class="vital-tile gluc" id="vital-tile-gluc">
+              <div class="vital-label">Glucose</div>
+              <div class="vital-value gluc" id="vv-gluc">—</div>
+              <div class="vital-unit">mg/dL</div>
+              <div class="vital-trend" id="vt-gluc"></div>
+            </div>
+            <div class="vital-tile" style="--c:var(--accent);" id="vital-tile-rr">
+              <div class="vital-label">Resp. Rate</div>
+              <div class="vital-value" style="color:var(--accent);" id="vv-rr">—</div>
+              <div class="vital-unit">bpm</div>
+              <div class="vital-trend" id="vt-rr"></div>
+            </div>
+          </div>
+
+          <!-- ECG Sparkline -->
+          <div class="ecg-wrap" style="margin-top:20px;">
+            <canvas class="ecg-canvas" id="ecg-canvas"></canvas>
+            <div class="ecg-label">ECG</div>
+          </div>
+
+          <!-- Anomaly Score -->
+          <div class="anomaly-score-wrap">
+            <div class="anomaly-score-label">
+              <span>ML Anomaly Score</span>
+              <span id="anomaly-score-value" style="color:var(--text-secondary)">—</span>
+            </div>
+            <div class="anomaly-bar">
+              <div class="anomaly-fill normal" id="anomaly-bar-fill" style="width:12%"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Bottom Row: Overview + Drone + Identity ───────────────────────── -->
+      <div class="dash-pro-bottom">
+
+        <!-- Overview & Quick Actions -->
+        <div>
+          <section id="dash-overview">
+            <h2 class="section-title" id="dash-greeting">Good Morning!</h2>
+            <p class="section-sub">Your health command centre.</p>
+            <div class="stat-grid" id="dash-stats">
+              <div class="stat-card fade-up">
+                <div class="stat-icon">📅</div>
+                <div class="stat-value" id="stat-appointments">—</div>
+                <div class="stat-label">Appointments</div>
+              </div>
+              <div class="stat-card fade-up" style="animation-delay:.1s">
+                <div class="stat-icon">📋</div>
+                <div class="stat-value" id="stat-prescriptions">—</div>
+                <div class="stat-label">Prescriptions</div>
+              </div>
+              <div class="stat-card fade-up" style="animation-delay:.2s">
+                <div class="stat-icon">🚨</div>
+                <div class="stat-value" id="stat-alerts">0</div>
+                <div class="stat-label">AI Alerts Today</div>
+              </div>
+            </div>
+            <div style="margin-top:28px;">
+              <h3 style="margin-bottom:14px;font-weight:600;">Quick Actions</h3>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <button class="card" style="text-align:left;cursor:pointer;padding:18px;" data-goto="triage">
+                  <div style="font-size:1.8rem;margin-bottom:6px;">🧠</div>
+                  <div style="font-weight:700;margin-bottom:2px;">AI Triage</div>
+                  <div style="font-size:.8rem;color:var(--text-secondary);">Symptom checker</div>
+                </button>
+                <button class="card" style="text-align:left;cursor:pointer;padding:18px;" data-goto="pharmacy">
+                  <div style="font-size:1.8rem;margin-bottom:6px;">🧬</div>
+                  <div style="font-weight:700;margin-bottom:2px;">E-Pharmacy</div>
+                  <div style="font-size:.8rem;color:var(--text-secondary);">Order medicines</div>
+                </button>
+                <button class="card" style="text-align:left;cursor:pointer;padding:18px;" data-goto="consultation">
+                  <div style="font-size:1.8rem;margin-bottom:6px;">🥽</div>
+                  <div style="font-weight:700;margin-bottom:2px;">Video Consult</div>
+                  <div style="font-size:.8rem;color:var(--text-secondary);">Meet your doctor</div>
+                </button>
+                <button class="card" style="text-align:left;cursor:pointer;padding:18px;" data-section="drone">
+                  <div style="font-size:1.8rem;margin-bottom:6px;">🚁</div>
+                  <div style="font-weight:700;margin-bottom:2px;">Drone Status</div>
+                  <div style="font-size:.8rem;color:var(--text-secondary);">Track delivery</div>
+                </button>
+              </div>
+            </div>
+
+            <!-- Alert Timeline -->
+            <div style="margin-top:28px;">
+              <h3 style="margin-bottom:14px;font-weight:600;">🔔 Ambient Alert History</h3>
+              <div class="alert-timeline" id="alert-timeline">
+                <div style="text-align:center;padding:24px;color:var(--text-muted);font-size:.85rem;">
+                  No alerts yet. Your vitals are being monitored.
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Other sections -->
+          <section id="dash-appointments" class="hidden">
+            <h2 class="section-title">Appointments</h2>
+            <div id="appointments-list"><div class="loading-center"><div class="spinner spinner-lg"></div></div></div>
+          </section>
+          
+          <!-- Doctor Queue Section -->
+          <section id="dash-queue" class="hidden">
+            <h2 class="section-title">👨‍⚕️ Patient Consultation Queue</h2>
+            <p class="section-sub">Next patients scheduled for AI-assisted consultation.</p>
+            <div id="doctor-queue-list">
+               <div style="text-align:center;padding:40px;color:var(--text-muted);">No patients in queue.</div>
+            </div>
+          </section>
+
+          <!-- Pharmacist Inventory Section -->
+          <section id="dash-inventory" class="hidden">
+            <h2 class="section-title">💊 Smart Inventory Management</h2>
+            <p class="section-sub">Real-time stock monitoring & drone dispatch center.</p>
+            <div class="inventory-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:15px;" id="inventory-list">
+               <!-- Populated by pharmacy.js -->
+            </div>
+          </section>
+
+          <!-- ── Blinkit-Style Live Order Tracking (New) ─────────────────── -->
+          <section id="dash-live-tracking" class="hidden">
+            <div class="card" style="padding:0; overflow:hidden; border: 1px solid var(--primary);">
+               <div style="background:var(--primary); color:white; padding:15px 20px; display:flex; justify-content:space-between; align-items:center;">
+                  <div>
+                     <h3 style="margin:0; font-size:1.2rem; display:flex; align-items:center; gap:8px;">
+                        <span class="icon" style="font-size:1.5rem;">⏱️</span> Arriving in <span id="track-eta">12</span> mins
+                     </h3>
+                     <div style="font-size:0.8rem; opacity:0.9;">Order #ORD-<span id="track-id">8492A</span></div>
+                  </div>
+                  <div style="text-align:right;">
+                     <div style="font-size:0.8rem; opacity:0.9;">Delivery to</div>
+                     <div style="font-weight:700;" id="track-address">Home</div>
+                  </div>
+               </div>
+               
+               <div style="padding:20px;">
+                  <!-- Progress Tracker -->
+                  <div class="tracking-progress" style="display:flex; justify-content:space-between; position:relative; margin-bottom:30px;">
+                     <div style="position:absolute; top:15px; left:0; right:0; height:3px; background:rgba(255,255,255,0.1); z-index:1;"></div>
+                     <div id="track-bar" style="position:absolute; top:15px; left:0; width:0%; height:3px; background:var(--primary); z-index:2; transition:width 1s ease;"></div>
+                     
+                     <div class="track-step active" id="step-pack" style="position:relative; z-index:3; text-align:center;">
+                        <div class="step-icon" style="width:32px; height:32px; border-radius:50%; background:var(--primary); color:white; display:flex; align-items:center; justify-content:center; margin:0 auto 8px;">📦</div>
+                        <div style="font-size:0.75rem;">Packing</div>
+                     </div>
+                     <div class="track-step" id="step-dispatch" style="position:relative; z-index:3; text-align:center; opacity:0.5;">
+                        <div class="step-icon" style="width:32px; height:32px; border-radius:50%; background:var(--glass-3); border:1px solid rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; margin:0 auto 8px;">🏍️</div>
+                        <div style="font-size:0.75rem;">Dispatched</div>
+                     </div>
+                     <div class="track-step" id="step-arrive" style="position:relative; z-index:3; text-align:center; opacity:0.5;">
+                        <div class="step-icon" style="width:32px; height:32px; border-radius:50%; background:var(--glass-3); border:1px solid rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; margin:0 auto 8px;">🏠</div>
+                        <div style="font-size:0.75rem;">Arriving</div>
+                     </div>
+                  </div>
+
+                  <div style="background:var(--glass-2); border-radius:var(--radius); padding:15px; display:flex; align-items:center; gap:15px; margin-bottom:15px;">
+                     <div style="font-size:2rem;">🏍️</div>
+                     <div>
+                        <div style="font-weight:700; font-size:1.1rem;">Alex (Delivery Partner)</div>
+                        <div style="font-size:0.8rem; color:var(--text-secondary);">Temperature Checked: 36.5°C</div>
+                     </div>
+                     <button class="btn btn-outline btn-sm" style="margin-left:auto;">📞 Call</button>
+                  </div>
+                  
+                  <div id="delivery-map-container" style="height: 250px; border-radius: var(--radius); margin-bottom: 15px; border: 1px solid var(--border); display: none;"></div>
+                  
+                  <button class="btn btn-primary" style="width:100%;" onclick="document.getElementById('dash-drone').scrollIntoView({behavior:'smooth'})">View Fleet Status 📍</button>
+               </div>
+            </div>
+          </section>
+
+          <section id="dash-prescriptions" class="hidden">
+            <h2 class="section-title">Prescriptions</h2>
+            <div id="prescriptions-list"><div class="loading-center"><div class="spinner spinner-lg"></div></div></div>
+          </section>
+          <section id="dash-orders" class="hidden">
+            <h2 class="section-title">My Orders</h2>
+            <div id="orders-list"><div class="loading-center"><div class="spinner spinner-lg"></div></div></div>
+          </section>
+        </div>
+
+        <!-- Drone Tracker + PQC Identity -->
+        <div style="display:flex;flex-direction:column;gap:24px;">
+
+          <!-- Drone Map -->
+          <section id="dash-drone">
+            <div class="drone-map-panel">
+              <div class="drone-map-header">
+                <div class="drone-map-title">🚁 Live Delivery Fleet Tracker</div>
+                <span class="badge badge-primary" id="drone-count-badge">0 active</span>
+              </div>
+              <div class="drone-map-canvas" id="drone-map-canvas">
+                <div class="drone-radar-sweep"></div>
+              </div>
+              <div class="drone-fleet-list" id="drone-fleet-list">
+                <div style="text-align:center;padding:16px;color:var(--text-muted);font-size:.85rem;">Connecting to fleet...</div>
+              </div>
+            </div>
+          </section>
+
+          <!-- PQC Identity Card -->
+          <section id="dash-identity">
+            <div class="pqc-identity-card">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+                <span style="font-size:1.5rem;">🔐</span>
+                <div>
+                  <div style="font-weight:700;">Digital Identity</div>
+                  <div style="font-size:.78rem;color:var(--text-secondary);">Secure Health ID</div>
+                </div>
+              </div>
+              <div class="pqc-did-label">Decentralized Identifier (DID)</div>
+              <div class="pqc-did-value" id="pqc-did-display">did:mediflow:—</div>
+              <div class="pqc-key-badges">
+                <div class="pqc-badge">🔑 Kyber-768 (ML-KEM)</div>
+                <div class="pqc-badge">✍️ Dilithium-3 (ML-DSA)</div>
+                <div class="pqc-badge">🛡️ NIST Level 3</div>
+              </div>
+            </div>
+          </section>
+
+        </div><!-- /right column -->
+      </div><!-- /dash-pro-bottom -->
+    </div><!-- /dash-pro-grid -->
+
+    <!-- ── Analytics Charts ─────────────────────────────────────────────── -->
+    <div class="analytics-grid reveal" style="margin-top:28px;">
+      <div class="chart-card">
+        <div class="chart-card-title">🩺 Triage Distribution</div>
+        <div class="chart-canvas-wrap"><canvas id="chart-specialty-donut"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-title">📅 Weekly Appointments</div>
+        <div class="chart-canvas-wrap"><canvas id="chart-weekly-bar"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-title">❤️ Vitals Trend (24h)</div>
+        <div class="chart-canvas-wrap"><canvas id="chart-vitals-line"></canvas></div>
+      </div>
+    </div>
+
+    <!-- ── QR Prescription Demo ─────────────────────────────────────────── -->
+    <div class="qr-section reveal" style="margin-top:28px;">
+      <div id="qr-container"></div>
+      <div class="qr-info">
+        <h3>📱 Digital Prescriptions</h3>
+        <p>Every prescription generates a scannable QR code containing encrypted patient data, medication details, and verification signatures. Scan with any phone camera to verify authenticity.</p>
+        <button class="btn btn-outline btn-sm" id="demo-qr-btn" style="margin-top:16px;">🔄 Generate Demo Rx</button>
+      </div>
+    </div>
+
+    <!-- ── AI Model Performance Dashboard ────────────────────────────── -->
+    <div class="reveal" style="margin-top:36px;">
+      <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:10px;">
+        🔬 AI Model Performance Dashboard
+        <span style="font-size:.72rem;background:var(--primary);color:#fff;padding:2px 8px;border-radius:99px;font-weight:600;">LIVE METRICS</span>
+      </h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;" id="ml-metrics-grid">
+        <!-- Populated by health-ai.js -->
+        <div class="card" style="text-align:center;padding:18px 12px;">
+          <div style="font-size:.72rem;font-weight:700;letter-spacing:.05em;color:var(--text-secondary);text-transform:uppercase;margin-bottom:6px;">Specialty Accuracy</div>
+          <div style="font-size:2rem;font-weight:800;color:var(--primary);" id="ml-specialty-acc">—</div>
+          <div style="font-size:.74rem;color:var(--text-muted);">Hold-out test set</div>
+        </div>
+        <div class="card" style="text-align:center;padding:18px 12px;">
+          <div style="font-size:.72rem;font-weight:700;letter-spacing:.05em;color:var(--text-secondary);text-transform:uppercase;margin-bottom:6px;">Urgency Accuracy</div>
+          <div style="font-size:2rem;font-weight:800;color:var(--accent);" id="ml-urgency-acc">—</div>
+          <div style="font-size:.74rem;color:var(--text-muted);">GradientBoosting</div>
+        </div>
+        <div class="card" style="text-align:center;padding:18px 12px;">
+          <div style="font-size:.72rem;font-weight:700;letter-spacing:.05em;color:var(--text-secondary);text-transform:uppercase;margin-bottom:6px;">Brier Score</div>
+          <div style="font-size:2rem;font-weight:800;color:var(--success);" id="ml-brier">—</div>
+          <div style="font-size:.74rem;color:var(--text-muted);">Calibration quality</div>
+        </div>
+        <div class="card" style="text-align:center;padding:18px 12px;">
+          <div style="font-size:.72rem;font-weight:700;letter-spacing:.05em;color:var(--text-secondary);text-transform:uppercase;margin-bottom:6px;">5-Fold CV</div>
+          <div style="font-size:2rem;font-weight:800;color:var(--warning);" id="ml-cv-acc">—</div>
+          <div style="font-size:.74rem;color:var(--text-muted);">Cross-validation</div>
+        </div>
+        <div class="card" style="text-align:center;padding:18px 12px;">
+          <div style="font-size:.72rem;font-weight:700;letter-spacing:.05em;color:var(--text-secondary);text-transform:uppercase;margin-bottom:6px;">Feature Tokens</div>
+          <div style="font-size:2rem;font-weight:800;color:var(--text-primary);" id="ml-features">—</div>
+          <div style="font-size:.74rem;color:var(--text-muted);">Unique symptoms</div>
+        </div>
+        <div class="card" style="text-align:center;padding:18px 12px;">
+          <div style="font-size:.72rem;font-weight:700;letter-spacing:.05em;color:var(--text-secondary);text-transform:uppercase;margin-bottom:6px;">XAI Method</div>
+          <div style="font-size:1.2rem;font-weight:800;color:var(--primary);margin-top:8px;" id="ml-shap">—</div>
+          <div style="font-size:.74rem;color:var(--text-muted);">Shapley values</div>
+        </div>
+      </div>
+      <div style="font-size:.76rem;color:var(--text-muted);padding:8px 12px;background:rgba(99,102,241,.05);border-radius:8px;border-left:2px solid var(--primary);">
+        Model: CalibratedClassifierCV (isotonic) · RandomForest (n=300) · GradientBoosting (n=200)
+        · Brier score measures calibration: lower = better probability estimates
+        · <a href="https://arxiv.org/abs/1705.07874" target="_blank" style="color:var(--primary);">SHAP: arXiv:1705.07874</a>
+      </div>
+    </div>
+
+    <!-- ── Federated Learning Panel ──────────────────────────────────── -->
+    <div class="reveal" style="margin-top:28px;">
+      <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:10px;">
+        🌐 Federated Learning Network
+        <span style="font-size:.72rem;background:var(--success);color:#fff;padding:2px 8px;border-radius:99px;font-weight:600;">ACTIVE</span>
+      </h3>
+      <p style="font-size:.83rem;color:var(--text-secondary);margin-bottom:18px;">
+        FedAvg aggregation (McMahan et al., 2017) — patient data never leaves hospital systems.
+        Differential privacy ε applied to gradient updates. <a href="https://arxiv.org/abs/1602.06997" target="_blank" style="color:var(--primary);">arXiv:1602.06997</a>
+      </p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;" id="federated-nodes-grid">
+        <!-- Populated by health-ai.js -->
+        <div style="text-align:center;padding:30px;color:var(--text-muted);">Loading federated network...</div>
+      </div>
+      <div class="card" style="margin-top:14px;padding:16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;text-align:center;" id="federated-summary">
+        <div>
+          <div style="font-size:.78rem;color:var(--text-secondary);font-weight:700;text-transform:uppercase;letter-spacing:.04em;">Federated Accuracy</div>
+          <div style="font-size:1.6rem;font-weight:800;color:var(--success);" id="fed-accuracy">—</div>
+        </div>
+        <div>
+          <div style="font-size:.78rem;color:var(--text-secondary);font-weight:700;text-transform:uppercase;letter-spacing:.04em;">vs Local Baseline</div>
+          <div style="font-size:1.6rem;font-weight:800;color:var(--primary);" id="fed-gain">—</div>
+        </div>
+        <div>
+          <div style="font-size:.78rem;color:var(--text-secondary);font-weight:700;text-transform:uppercase;letter-spacing:.04em;">Patient Records Shared</div>
+          <div style="font-size:1.6rem;font-weight:800;color:var(--warning);">0</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     PAGE: TRIAGE
+     ══════════════════════════════════════════════════════════════════════ -->
+<div id="page-triage" class="page hidden">
+  <div class="container" style="max-width:960px;">
+    <h2 class="section-title">🧠 AI Symptom Checker</h2>
+    <p class="section-sub">Click on the body or type symptoms — our AI will recommend the right specialist.</p>
+
+    <div class="bodymap-wrap">
+      <!-- Interactive Body Map (populated by bodymap.js) -->
+      <div id="bodymap-container" class="reveal"></div>
+
+      <!-- Symptom Input Card -->
+      <div class="card">
+        <h3 style="margin-bottom:16px;font-weight:600;">Add Symptoms</h3>
+      <div class="symptom-search-wrap">
+        <input class="form-input" id="symptom-input" type="text"
+               placeholder="Type a symptom (e.g. chest pain, headache)..." autocomplete="off" />
+        <div class="symptom-suggestions hidden" id="symptom-suggestions"></div>
+      </div>
+      <div class="symptom-chips" id="symptom-chips"></div>
+
+      <h3 style="margin-bottom:12px;font-weight:600;">Severity</h3>
+      <div style="display:flex;gap:10px;margin-bottom:20px;">
+        <label style="cursor:pointer;display:flex;align-items:center;gap:6px;font-size:.9rem;">
+          <input type="radio" name="severity" value="mild" checked /> Mild
+        </label>
+        <label style="cursor:pointer;display:flex;align-items:center;gap:6px;font-size:.9rem;">
+          <input type="radio" name="severity" value="moderate" /> Moderate
+        </label>
+        <label style="cursor:pointer;display:flex;align-items:center;gap:6px;font-size:.9rem;">
+          <input type="radio" name="severity" value="severe" /> Severe
+        </label>
+      </div>
+
+      <h3 style="margin-bottom:12px;font-weight:600;">Vital Signs <span style="font-size:.8rem;color:var(--text-muted);font-weight:400;">(optional)</span></h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;">
+        <div class="form-group">
+          <label class="form-label">Heart Rate (bpm)</label>
+          <input class="form-input" id="vital-hr" type="number" placeholder="72" min="20" max="300" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">O₂ Saturation (%)</label>
+          <input class="form-input" id="vital-o2" type="number" placeholder="98" min="0" max="100" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Temperature (°C)</label>
+          <input class="form-input" id="vital-temp" type="number" placeholder="37.0" step="0.1" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Blood Pressure</label>
+          <input class="form-input" id="vital-bp" type="text" placeholder="120/80" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Respiratory Rate (bpm)</label>
+          <input class="form-input" id="vital-rr" type="number" placeholder="16" min="4" max="60" />
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="triage-submit-btn" style="width:100%;">
+        <span class="spinner hidden" id="triage-spinner"></span>
+        Analyse Symptoms
+      </button>
+    </div>
+
+    <!-- Result -->
+    <div class="triage-result hidden" id="triage-result">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+        <span style="font-size:2rem;">🩺</span>
+        <div>
+          <div style="font-size:.8rem;color:var(--text-secondary);margin-bottom:2px;">Recommended Specialist</div>
+          <div style="font-size:1.4rem;font-weight:700;" id="result-specialty"></div>
+        </div>
+        <div style="margin-left:auto;" id="result-badge"></div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;font-size:.85rem;margin-bottom:4px;">
+          <span>AI Confidence (Calibrated)</span><span id="result-confidence"></span>
+        </div>
+        <div class="confidence-bar"><div class="confidence-fill" id="result-conf-fill" style="width:0%"></div></div>
+      </div>
+
+      <!-- Differential Diagnosis -->
+      <div id="result-differentials" style="margin-bottom:16px;"></div>
+
+      <!-- Clinical Early Warning Scores (MEWS / CURB-65) -->
+      <div id="result-clinical-scores" class="hidden" style="margin-bottom:16px;"></div>
+
+      <!-- SHAP Explainability Panel -->
+      <div id="result-xai-panel" class="xai-panel hidden" style="margin-bottom:16px;"></div>
+
+      <!-- Emergency Banner -->
+      <div id="result-emergency-banner" class="hidden" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:var(--radius-sm);padding:14px;margin-bottom:16px;font-weight:600;color:#ef4444;">
+        🚨 Emergency detected — please call emergency services (112) immediately or go to the nearest ER.
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <button class="btn btn-primary" id="book-from-triage">Book Appointment</button>
+        <button class="btn btn-outline" id="triage-reset-btn">Check Again</button>
+      </div>
+    </div>
+    </div><!-- /bodymap-wrap -->
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     PAGE: PHARMACY
+     ══════════════════════════════════════════════════════════════════════ -->
+<div id="page-pharmacy" class="page hidden">
+  <div class="container">
+    <h2 class="section-title">💊 E-Pharmacy</h2>
+    <p class="section-sub">Search medicines and get them delivered via our optimised routing engine.</p>
+
+    <div style="display:flex;gap:12px;margin-bottom:28px;flex-wrap:wrap;">
+      <input class="form-input" id="med-search" type="search"
+             placeholder="Search medicines, generics, brands..." style="flex:1;min-width:240px;" />
+      <select class="form-input" id="med-category" style="width:180px;">
+        <option value="">All Categories</option>
+        <option value="otc">Over the Counter</option>
+        <option value="prescription">Prescription</option>
+        <option value="controlled">Controlled</option>
+      </select>
+    </div>
+
+    <div class="medicine-grid" id="medicine-grid">
+      <div class="loading-center" style="grid-column:1/-1"><div class="spinner spinner-lg"></div></div>
+    </div>
+
+    <div id="pharmacy-empty" class="hidden" style="text-align:center;padding:60px;color:var(--text-secondary);">
+      <div style="font-size:3rem;margin-bottom:16px;">🔍</div>
+      <div>No medicines found. Try a different search.</div>
+    </div>
+
+    <!-- Cart float -->
+    <div class="cart-badge hidden" id="cart-badge">
+      <span>🛒</span>
+      <span id="cart-count">0 items</span>
+      <span>·</span>
+      <span id="cart-total">₹0</span>
+      <span style="background:rgba(255,255,255,.2);padding:4px 12px;border-radius:99px;font-size:.85rem;">Checkout →</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     PAGE: CONSULTATION — Exhibition-Ready Video Call & Chat
+     ══════════════════════════════════════════════════════════════════════ -->
+<div id="page-consultation" class="page hidden">
+
+  <!-- ── LOBBY: Pre-room state with camera preview ───────────────────────── -->
+  <div id="pre-room" class="consult-lobby">
+    <div class="lobby-bg-glow"></div>
+    <div class="lobby-card">
+      <div class="lobby-header">
+        <div class="lobby-icon-wrap">
+          <span class="lobby-icon">📹</span>
+          <span class="lobby-icon-ring"></span>
+        </div>
+        <h2 class="lobby-title">Video Consultation</h2>
+        <p class="lobby-sub">Preview your camera and mic, then join the room.</p>
+      </div>
+
+      <!-- Camera preview -->
+      <div class="lobby-preview-wrap">
+        <video id="lobby-preview-video" class="lobby-preview-video" autoplay playsinline muted></video>
+        <div class="lobby-preview-overlay" id="lobby-preview-overlay">
+          <div class="lobby-preview-placeholder">
+            <span>📷</span>
+            <span>Camera off</span>
+          </div>
+        </div>
+        <div class="lobby-preview-controls">
+          <button class="lobby-ctrl-btn on" id="lobby-mic-btn" title="Toggle Microphone">🎙️</button>
+          <button class="lobby-ctrl-btn on" id="lobby-cam-btn" title="Toggle Camera">📷</button>
+        </div>
+        <!-- Audio level meter -->
+        <div class="lobby-audio-meter">
+          <div class="lobby-audio-bar" id="lobby-audio-bar"></div>
+        </div>
+      </div>
+
+      <!-- Room inputs -->
+      <div class="lobby-form">
+        <div class="form-group">
+          <label class="form-label">Room ID</label>
+          <input class="form-input" id="room-id-input" placeholder="Paste your consultation room ID..." autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Signaling Token <span style="color:var(--text-muted);font-weight:400;">(optional if signed in)</span></label>
+          <input class="form-input" id="room-token-input" placeholder="Auto-detected from your session..." autocomplete="off" />
+        </div>
+        <button class="btn btn-primary glow-pulse" id="join-room-btn" style="width:100%;margin-top:8px;">
+          <span id="join-spinner" class="spinner hidden"></span>
+          📹 Join Consultation Room
+        </button>
+        <p class="lobby-hint">Room ID and token are sent with your appointment confirmation.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── IN-ROOM: Active consultation ────────────────────────────────────── -->
+  <div id="in-room" class="hidden consult-room">
+
+    <!-- Call info header -->
+    <div class="call-header">
+      <div class="call-header-left">
+        <div class="call-room-badge">
+          <span class="call-room-dot"></span>
+          <span>LIVE</span>
+        </div>
+        <code class="call-room-id" id="room-id-display"></code>
+      </div>
+      <div class="call-header-center">
+        <div class="call-timer" id="call-timer">00:00</div>
+      </div>
+      <div class="call-header-right">
+        <span class="badge badge-primary" id="connection-status">⏳ Connecting...</span>
+        <span class="call-quality" id="call-quality" title="Connection quality">
+          <span class="quality-bar active"></span>
+          <span class="quality-bar active"></span>
+          <span class="quality-bar"></span>
+          <span class="quality-bar"></span>
+        </span>
+        <span class="call-participant-count" id="participant-count">1</span>
+      </div>
+    </div>
+
+    <!-- Video + Chat layout -->
+    <div class="video-room">
+
+      <!-- Main video area -->
+      <div class="video-main" id="video-main">
+        <video id="remote-video" class="video-remote" autoplay playsinline></video>
+
+        <!-- Waiting overlay (shown when no peer yet) -->
+        <div class="video-waiting" id="video-waiting">
+          <div class="waiting-pulse-ring"></div>
+          <div class="waiting-pulse-ring delay-1"></div>
+          <div class="waiting-pulse-ring delay-2"></div>
+          <div class="waiting-icon">🩺</div>
+          <div class="waiting-text">Waiting for your doctor to join...</div>
+          <div class="waiting-sub" id="waiting-sub">Share the room ID for them to connect</div>
+        </div>
+
+        <!-- Local video PiP -->
+        <div class="video-local-wrap" id="video-local-wrap">
+          <video id="local-video" class="video-local" autoplay playsinline muted></video>
+          <div class="local-video-label" id="local-video-label">You</div>
+        </div>
+
+        <!-- Remote name overlay -->
+        <div class="remote-name-overlay" id="remote-name-overlay" style="display:none;">
+          <span id="remote-name">Doctor</span>
+        </div>
+
+        <!-- Screen share indicator -->
+        <div class="screen-share-badge hidden" id="screen-share-badge">
+          🖥️ <span id="screen-share-who">You</span> sharing screen
+        </div>
+
+        <!-- Controls bar -->
+        <div class="video-controls-bar">
+          <div class="ctrl-group">
+            <button class="ctrl-btn-v2 on" id="btn-mic" title="Toggle Microphone">
+              <span class="ctrl-icon">🎙️</span>
+              <span class="ctrl-label">Mic</span>
+            </button>
+            <button class="ctrl-btn-v2 on" id="btn-cam" title="Toggle Camera">
+              <span class="ctrl-icon">📷</span>
+              <span class="ctrl-label">Cam</span>
+            </button>
+            <button class="ctrl-btn-v2" id="btn-screen" title="Share Screen">
+              <span class="ctrl-icon">🖥️</span>
+              <span class="ctrl-label">Share</span>
+            </button>
+          </div>
+          <div class="ctrl-group">
+            <button class="ctrl-btn-v2 danger" id="btn-hang" title="End Call">
+              <span class="ctrl-icon">📵</span>
+              <span class="ctrl-label">End</span>
+            </button>
+          </div>
+          <div class="ctrl-group">
+            <button class="ctrl-btn-v2" id="btn-fullscreen" title="Fullscreen">
+              <span class="ctrl-icon">⛶</span>
+              <span class="ctrl-label">Full</span>
+            </button>
+            <button class="ctrl-btn-v2" id="btn-pip" title="Picture in Picture">
+              <span class="ctrl-icon">🗗</span>
+              <span class="ctrl-label">PiP</span>
+            </button>
+            <button class="ctrl-btn-v2 chat-toggle-btn" id="btn-chat-toggle" title="Toggle Chat">
+              <span class="ctrl-icon">💬</span>
+              <span class="ctrl-label">Chat</span>
+              <span class="chat-unread-dot hidden" id="chat-unread-dot"></span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chat panel -->
+      <div class="chat-panel" id="chat-panel">
+        <div class="chat-header">
+          <div class="chat-header-title">
+            <span>💬</span> Consultation Chat
+          </div>
+          <button class="chat-close-btn" id="chat-close-btn" title="Close chat">✕</button>
+        </div>
+
+        <!-- Chat messages -->
+        <div class="chat-messages" id="chat-messages">
+          <div class="chat-welcome">
+            <div class="chat-welcome-icon">🔒</div>
+            <div class="chat-welcome-text">Messages are end-to-end encrypted and auto-deleted after 90 days.</div>
+          </div>
+        </div>
+
+        <!-- Typing indicator -->
+        <div class="chat-typing-wrap hidden" id="chat-typing-wrap">
+          <div class="chat-typing-indicator">
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+          </div>
+          <span class="chat-typing-name" id="chat-typing-name">Doctor</span>
+          <span class="chat-typing-label">is typing...</span>
+        </div>
+
+        <!-- Chat input -->
+        <div class="chat-input-area">
+          <div class="chat-input-row">
+            <label class="chat-attach-btn" id="chat-attach-btn" title="Attach file">
+              📎
+              <input type="file" id="chat-file-input" style="display:none;" accept="image/*,.pdf,.doc,.docx,.txt" />
+            </label>
+            <input class="form-input chat-input" id="chat-input" placeholder="Type a message..." autocomplete="off" />
+            <button class="chat-send-btn" id="chat-send" title="Send message">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     AUTH MODAL
+     ══════════════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="auth-modal">
+  <div class="modal-box">
+    <!-- Login form -->
+    <div id="login-form-wrap">
+      <h2 class="modal-title">Welcome back 👋</h2>
+      <p class="modal-sub">Sign in to access your health dashboard.</p>
+      <form class="modal-form" id="login-form" novalidate>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input class="form-input" id="login-email" type="email" placeholder="you@example.com" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input class="form-input" id="login-password" type="password" placeholder="••••••••" required />
+        </div>
+        <div class="form-error hidden" id="login-error">⚠ <span></span></div>
+        <button class="btn btn-primary" type="submit" id="login-submit" style="width:100%;">
+          <span class="spinner hidden" id="login-spinner"></span> Sign In
+        </button>
+      </form>
+      <p class="modal-switch">No account? <a id="switch-to-register">Create one</a></p>
+    </div>
+
+    <!-- Register form -->
+    <div id="register-form-wrap" class="hidden">
+      <h2 class="modal-title">Create account 🏥</h2>
+      <p class="modal-sub">Join MediFlow for intelligent healthcare.</p>
+      <form class="modal-form" id="register-form" novalidate>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="form-group">
+            <label class="form-label">First Name</label>
+            <input class="form-input" id="reg-first" type="text" placeholder="Jane" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Last Name</label>
+            <input class="form-input" id="reg-last" type="text" placeholder="Smith" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input class="form-input" id="reg-email" type="email" placeholder="you@example.com" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input class="form-input" id="reg-password" type="password" placeholder="Min 8 chars, mixed case + symbol" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Role</label>
+          <select class="form-input" id="reg-role">
+            <option value="patient">Patient</option>
+            <option value="doctor">Doctor</option>
+            <option value="pharmacist">Pharmacist</option>
+          </select>
+        </div>
+        <div class="form-error hidden" id="reg-error">⚠ <span></span></div>
+        <button class="btn btn-primary" type="submit" id="reg-submit" style="width:100%;">
+          <span class="spinner hidden" id="reg-spinner"></span> Create Account
+        </button>
+      </form>
+      <p class="modal-switch">Already have an account? <a id="switch-to-login">Sign in</a></p>
+    </div>
+
+    <!-- ── Exhibition Quick Sign-In (New) ─────────────────────────────────── -->
+    <div id="demo-bootstrap" style="margin-top:24px;border-top:1px solid var(--border);padding-top:20px;">
+       <div style="font-size:.7rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:12px;text-align:center;letter-spacing:.05em;">Exhibition Quick Access (Judge Mode)</div>
+       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+          <button class="btn btn-outline btn-sm demo-login-btn" data-demo-role="patient" style="font-size:.75rem;">👤 Patient</button>
+          <button class="btn btn-outline btn-sm demo-login-btn" data-demo-role="doctor" style="font-size:.75rem;">🩺 Doctor</button>
+          <button class="btn btn-outline btn-sm demo-login-btn" data-demo-role="pharmacist" style="font-size:.75rem;">💊 Pharmacist</button>
+       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MEDIBOT — Floating AI Chat Assistant
+     ══════════════════════════════════════════════════════════════════════ -->
+<button id="medibot-toggle" title="Chat with MediBot AI">🤖</button>
+
+<div id="medibot-panel">
+  <div class="medibot-header">
+    <div class="medibot-header-info">
+      <div class="medibot-avatar">🤖</div>
+      <div>
+        <div class="medibot-name">MediBot AI</div>
+        <div class="medibot-status">Online</div>
+      </div>
+    </div>
+    <button id="medibot-close">✕</button>
+  </div>
+
+  <div id="medibot-messages"></div>
+
+  <div id="medibot-typing" class="hidden">
+    <div class="chat-typing-indicator">
+      <span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>
+    </div>
+    <span>MediBot is thinking...</span>
+  </div>
+
+  <div class="medibot-quick-actions">
+    <button class="medibot-quick-btn" data-action="triage">🩺 Symptoms</button>
+    <button class="medibot-quick-btn" data-action="consultation">📹 Consult</button>
+    <button class="medibot-quick-btn" data-action="pharmacy">💊 Pharmacy</button>
+    <button class="medibot-quick-btn" data-action="about">❓ About</button>
+  </div>
+
+  <div class="medibot-input-area">
+    <div class="medibot-input-row">
+      <input class="form-input" id="medibot-input" placeholder="Ask me anything..." autocomplete="off" />
+      <button id="medibot-send">➤</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     FOOTER
+     ══════════════════════════════════════════════════════════════════════ -->
+<footer class="mf-footer">
+  <div class="footer-grid">
+    <div>
+      <div class="footer-brand">🏥 <span>MediFlow</span></div>
+      <p class="footer-desc">Full-stack AI-powered telemedicine platform with real-time health monitoring, video consultations, smart pharmacy, and delivery tracking.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Platform</h4>
+      <a href="#triage">AI Triage</a>
+      <a href="#consultation">Video Consult</a>
+      <a href="#pharmacy">E-Pharmacy</a>
+      <a href="#dashboard">Dashboard</a>
+    </div>
+    <div class="footer-col">
+      <h4>Technology</h4>
+      <a>Machine Learning</a>
+      <a>WebRTC</a>
+      <a>Socket.IO</a>
+      <a>IoT Integration</a>
+    </div>
+    <div class="footer-col">
+      <h4>Exhibition</h4>
+      <a>Re-Imagine Tech II</a>
+      <a>Project Demo</a>
+      <a>Architecture Docs</a>
+      <a>API Reference</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2026 MediFlow — Smart Telemedicine Platform</span>
+    <div class="footer-tech">
+      <span class="footer-tech-badge">MERN Stack</span>
+      <span class="footer-tech-badge">FastAPI</span>
+      <span class="footer-tech-badge">Random Forest ML</span>
+      <span class="footer-tech-badge">WebRTC</span>
+      <span class="footer-tech-badge">Socket.IO</span>
+      <span class="footer-tech-badge">REST API</span>
+    </div>
+  </div>
+</footer>
+
+<!-- ── Scripts ────────────────────────────────────────────────────────────── -->
+<script src="/socket.io/socket.io.js"></script>
+
+<!-- ── E-Commerce Checkout Modal (New) ──────────────────────────────────── -->
+<div id="checkout-modal" class="modal-overlay hidden">
+  <div class="modal-content card" style="max-width:500px; padding:0;">
+    <div style="padding:20px 24px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+       <h2 style="margin:0; font-size:1.2rem;">Secure Checkout</h2>
+       <button class="btn btn-outline btn-sm" id="close-checkout" style="border:none;">✕</button>
+    </div>
+    
+    <div style="padding:24px;">
+       <form id="checkout-form">
+         <!-- Cart summary -->
+         <div id="checkout-items-list" style="margin-bottom:20px;max-height:180px;overflow-y:auto;"></div>
+
+         <div style="margin-bottom:20px;">
+            <label style="display:block; margin-bottom:8px; font-size:0.85rem; color:var(--text-secondary);">Delivery Address</label>
+            <textarea id="checkout-address" class="form-input" rows="3" placeholder="Enter your full delivery address..." required></textarea>
+         </div>
+
+         <div style="margin-bottom:24px;">
+            <label style="display:block; margin-bottom:8px; font-size:0.85rem; color:var(--text-secondary);">Payment Method</label>
+            <select id="checkout-payment" class="form-input" required>
+               <option value="card">Credit/Debit Card</option>
+               <option value="upi">UPI / Wallet</option>
+               <option value="cod">Cash on Delivery</option>
+            </select>
+         </div>
+       </form>
+       
+        <div style="border-top:1px dashed var(--border); padding-top:16px; margin-bottom:20px;">
+           <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:0.9rem;"><span>Subtotal</span><span id="checkout-subtotal">$0.00</span></div>
+           <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:0.9rem;"><span>Delivery Fee (⚡ Instant)</span><span style="color:var(--success);">Free</span></div>
+           <div style="display:flex; justify-content:space-between; font-weight:700; font-size:1.2rem; margin-top:12px;"><span>Total to Pay</span><span id="checkout-total">$0.00</span></div>
+        </div>
+
+        <button type="submit" id="btn-confirm-pay" class="btn btn-primary" style="width:100%; font-size:1.1rem; padding:14px; position:relative; overflow:hidden;">
+           <span id="pay-text">Pay & Place Order</span>
+           <div id="pay-spinner" class="spinner hidden" style="margin:0 auto; width:20px; height:20px;"></div>
+        </button>
+       </form>
+    </div>
+  </div>
+</div>
+
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script type="module" src="js/app.js"></script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     EMERGENCY SOS MODAL
+     ══════════════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="sos-modal">
+  <div class="modal-box" style="max-width:400px;text-align:center;border:2px solid rgba(239,68,68,.5);">
+    <div style="font-size:3rem;margin-bottom:12px;">🚨</div>
+    <h2 style="color:#ef4444;margin-bottom:8px;">Emergency SOS</h2>
+    <p style="color:var(--text-secondary);margin-bottom:20px;">Dispatching emergency services in <strong id="sos-countdown" style="color:#ef4444;font-size:1.5rem;">10</strong> seconds</p>
+    <div style="background:rgba(239,68,68,.1);border-radius:var(--radius);padding:16px;margin-bottom:20px;font-size:.9rem;">
+      <div>📍 Location: Auto-detected</div>
+      <div>🏥 Nearest ER: 2.3 km away</div>
+      <div>⏱️ ETA: ~8 minutes</div>
+    </div>
+    <button class="btn btn-primary" id="sos-cancel" style="width:100%;background:var(--glass-3);border:1px solid var(--border);color:var(--text-primary);">✕ Cancel — I'm Safe</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MEDICINE SCANNER MODAL
+     ══════════════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="scanner-modal">
+  <div class="modal-box" style="max-width:440px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 style="margin:0;">🔍 Medicine Barcode Scanner</h3>
+      <button id="scanner-close" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--text-secondary);">✕</button>
+    </div>
+    <div style="border-radius:var(--radius);overflow:hidden;background:#000;margin-bottom:12px;position:relative;height:240px;">
+      <video id="scanner-video" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;"></video>
+      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+        <div style="width:200px;height:80px;border:2px solid var(--primary);border-radius:8px;box-shadow:0 0 0 9999px rgba(0,0,0,.4);"></div>
+      </div>
+    </div>
+    <div id="scanner-status" style="text-align:center;color:var(--text-secondary);font-size:.85rem;">Initializing camera...</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     OCR PRESCRIPTION SCANNER MODAL
+     ══════════════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="ocr-modal">
+  <div class="modal-box" style="max-width:520px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 style="margin:0;">📷 OCR Prescription Scanner</h3>
+      <button id="ocr-close" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--text-secondary);">✕</button>
+    </div>
+    <p style="color:var(--text-secondary);font-size:.85rem;margin-bottom:12px;">Hold a handwritten or printed prescription to the camera to digitize it.</p>
+    <div style="border-radius:var(--radius);overflow:hidden;background:#000;margin-bottom:12px;position:relative;height:200px;">
+      <video id="ocr-video" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;"></video>
+      <div style="position:absolute;top:8px;right:8px;background:rgba(99,102,241,.8);color:white;padding:4px 10px;border-radius:99px;font-size:.7rem;font-weight:700;">AI SCANNING</div>
+    </div>
+    <div id="ocr-result" style="min-height:60px;"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     AI HEALTH SCORE PAGE SECTION (in dashboard)
+     ══════════════════════════════════════════════════════════════════════ -->
+<template id="health-score-template">
+  <section id="dash-healthscore" style="margin-top:28px;">
+    <h2 class="section-title">🧬 AI Health Score</h2>
+    <p class="section-sub">Real-time composite health score computed from all biometric signals.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;" class="reveal">
+      <!-- Gauge -->
+      <div class="card" style="padding:24px;text-align:center;">
+        <canvas id="health-score-gauge" width="180" height="180" style="width:180px;height:180px;"></canvas>
+        <div id="health-grade-label" style="font-size:1.2rem;font-weight:800;margin-top:8px;">—</div>
+        <div style="font-size:.75rem;color:var(--text-secondary);">Overall Health Grade</div>
+        <button class="btn btn-outline btn-sm" id="download-report-btn" style="margin-top:16px;width:100%;">📄 Download Health Report</button>
+      </div>
+      <!-- Risk Radar -->
+      <div class="card" style="padding:24px;text-align:center;">
+        <canvas id="health-radar-canvas" width="200" height="200" style="width:200px;height:200px;"></canvas>
+        <div style="font-size:.75rem;color:var(--text-secondary);margin-top:8px;">Biometric Radar</div>
+      </div>
+      <!-- Risks + Recommendations -->
+      <div class="card" style="padding:20px;">
+        <div style="font-weight:700;margin-bottom:12px;font-size:.9rem;">⚠️ Risk Flags</div>
+        <div id="health-risk-list"></div>
+        <div style="font-weight:700;margin-top:16px;margin-bottom:8px;font-size:.9rem;">💡 Recommendations</div>
+        <div id="health-recommendations"></div>
+      </div>
+    </div>
+  </section>
+</template>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     APPOINTMENT BOOKING SECTION (in dashboard)
+     ══════════════════════════════════════════════════════════════════════ -->
+<template id="booking-template">
+  <section id="dash-booking" style="margin-top:28px;">
+    <h2 class="section-title">📅 Book Appointment</h2>
+    <p class="section-sub">Schedule a video consultation with the right specialist in 3 clicks.</p>
+    <div class="card" style="padding:28px;" id="booking-widget"></div>
+  </section>
+</template>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     DOCTOR TOOLS SECTION (in dashboard — shown only for doctors)
+     ══════════════════════════════════════════════════════════════════════ -->
+<template id="doctor-tools-template">
+  <section id="dash-doctor-tools" style="margin-top:28px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+      <!-- Prescription Pad -->
+      <div class="card" style="padding:24px;">
+        <div id="prescription-pad"></div>
+      </div>
+      <!-- Doctor Ratings -->
+      <div class="card" style="padding:24px;">
+        <h3 style="font-weight:700;margin-bottom:20px;">⭐ Patient Ratings</h3>
+        <div id="doctor-rating-widget"></div>
+      </div>
+    </div>
+    <!-- OCR + Scan Buttons -->
+    <div style="display:flex;gap:12px;margin-top:20px;">
+      <button class="btn btn-outline" id="ocr-scan-btn" style="flex:1;">📷 OCR Prescription Scanner</button>
+      <button class="btn btn-outline" id="scan-medicine-btn" style="flex:1;">🔍 Barcode Medicine Scanner</button>
+    </div>
+  </section>
+</template>
+
+</body>
+</html>

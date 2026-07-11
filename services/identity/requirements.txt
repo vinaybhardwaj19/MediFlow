@@ -1,0 +1,34 @@
+# MediFlow 2036 — Identity Service Dependencies
+# ============================================================================
+# Install with: pip install -r requirements.txt
+#
+# PQC Libraries:
+#   liboqs-python — Real NIST PQC (Kyber-768, Dilithium-3).
+#   Requires the liboqs C library to be installed first:
+#     Windows: choco install liboqs  OR  build from source (cmake)
+#     Linux:   sudo apt install liboqs-dev
+#     macOS:   brew install liboqs
+#   If unavailable, the service falls back to simulation mode automatically.
+#
+# The commented-out `liboqs` line is intentionally left in — uncomment when
+# the C library is available on the host system.
+# ============================================================================
+
+# ── Web Framework ─────────────────────────────────────────────────────────────
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+pydantic==2.9.2
+
+# ── Database ──────────────────────────────────────────────────────────────────
+asyncpg==0.29.0
+
+# ── Cryptography (Fallback + AES-256-GCM) ────────────────────────────────────
+cryptography==43.0.1
+PyNaCl==1.5.0
+
+# ── PQC — REAL (uncomment when liboqs C library is installed) ─────────────────
+# liboqs-python==0.10.0
+
+# ── Utilities ─────────────────────────────────────────────────────────────────
+python-dotenv==1.0.1
+httpx==0.27.0         # For internal service calls
