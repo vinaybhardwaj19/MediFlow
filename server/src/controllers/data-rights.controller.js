@@ -1,18 +1,17 @@
-const User = require('../models/User');
-// Use try-catch in case these models are named differently or missing
+const User = require('../models/User.model');
 let Appointment, Prescription, MedicalRecord;
 try {
-  Appointment = require('../models/Appointment');
+  Appointment = require('../models/Appointment.model');
 } catch (e) {
   Appointment = null;
 }
 try {
-  Prescription = require('../models/Prescription');
+  Prescription = require('../models/Prescription.model');
 } catch (e) {
   Prescription = null;
 }
 try {
-  MedicalRecord = require('../models/MedicalRecord');
+  MedicalRecord = require('../models/MedicalRecord.model');
 } catch (e) {
   MedicalRecord = null;
 }

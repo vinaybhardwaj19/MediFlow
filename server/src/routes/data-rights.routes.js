@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { verifyToken } = require('../middlewares/auth.middleware');
+const { verifyToken } = require('../middleware/auth.middleware');
 const dataRightsController = require('../controllers/data-rights.controller');
 
 // DPDP Act compliance routes
