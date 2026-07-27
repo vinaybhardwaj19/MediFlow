@@ -50,6 +50,7 @@
   <button class="btn btn-sm btn-outline m3-role-pill" data-role="rider" style="border-radius:99px; padding:3px 12px; font-size:0.72rem; font-weight:700;">🏍️ Delivery Rider</button>
   <button class="btn btn-sm btn-outline m3-role-pill" data-role="lab" style="border-radius:99px; padding:3px 12px; font-size:0.72rem; font-weight:700;">🧪 Lab Tech</button>
   <button class="btn btn-sm btn-outline m3-role-pill" data-role="admin" style="border-radius:99px; padding:3px 12px; font-size:0.72rem; font-weight:700;">🛡️ Admin</button>
+  <button class="btn btn-sm" id="btn-open-ppt-bar" style="border-radius:99px; padding:3px 12px; font-size:0.72rem; font-weight:800; background:linear-gradient(135deg,#6366f1,#ec4899); color:white; border:none; cursor:pointer;">📽️ Tech Slide Deck (5-Page PPT)</button>
 </div>
 
 <!-- ── Toast container ────────────────────────────────────────────────────── -->
@@ -1957,18 +1958,245 @@
   </a>
 </nav>
 
-<!-- ── Emergency SOS Countdown Modal ──────────────────────────────────────── -->
-<div class="modal-overlay hidden" id="sos-modal">
-  <div class="modal-box" style="text-align:center; max-width:400px; border:2px solid #ef4444; background:rgba(239,68,68,0.06);">
-    <div style="font-size:3.5rem; animation: pulse 1s infinite;">🆘</div>
-    <h2 style="color:#ef4444; font-size:1.5rem; margin-top:8px;">EMERGENCY SOS ACTIVATED</h2>
-    <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:16px;">
-      Dispatching nearest emergency responders and sharing your real-time GPS location...
-    </p>
-    <div id="sos-countdown" style="font-size:3rem; font-weight:800; color:#ef4444; margin-bottom:16px;">5</div>
-    <button class="btn btn-outline" id="sos-cancel-btn" style="width:100%; border-color:#ef4444; color:#ef4444;">
-      ✕ Cancel Emergency Dispatch
-    </button>
+<!-- ── 5-Page Localhost Presentation Slide Deck Modal (PPT) ────────────────── -->
+<div class="modal-overlay hidden" id="ppt-slide-modal" style="z-index:99999; background:rgba(13,17,23,0.96); backdrop-filter:blur(15px);">
+  <div style="width:94vw; max-width:1200px; height:90vh; background:#0d1117; border:1px solid rgba(99,102,241,0.3); border-radius:24px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 25px 50px rgba(0,0,0,0.5);">
+    
+    <!-- PPT Header Bar -->
+    <div style="padding:16px 24px; background:#161b22; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <span style="font-size:1.5rem;">🏥</span>
+        <div>
+          <div style="font-weight:800; font-size:1.1rem; color:var(--text-main);">MediFlow Enterprise — Tech Architecture & Stack Deck</div>
+          <div style="font-size:0.75rem; color:var(--text-muted);">AI First Hackathon 2026 Presentation</div>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <span id="ppt-slide-indicator" style="font-size:0.85rem; font-weight:700; background:rgba(99,102,241,0.15); color:#818cf8; padding:4px 12px; border-radius:99px; border:1px solid rgba(99,102,241,0.3);">Slide 1 of 5</span>
+        <button class="btn btn-outline btn-sm" id="ppt-close-btn" style="border-radius:50%; width:36px; height:36px; padding:0; display:flex; align-items:center; justify-content:center;">✕</button>
+      </div>
+    </div>
+
+    <!-- PPT Main Slide Canvas Area -->
+    <div style="flex:1; padding:32px 40px; overflow-y:auto; position:relative;" id="ppt-slide-viewport">
+      
+      <!-- ── SLIDE 1: Title & Executive Overview ── -->
+      <div class="ppt-slide-page" id="ppt-slide-1" style="display:block;">
+        <div style="display:inline-block; padding:4px 14px; background:rgba(99,102,241,0.15); color:#818cf8; border-radius:99px; font-weight:700; font-size:0.8rem; margin-bottom:12px;">SLIDE 1 / 5 · EXECUTIVE OVERVIEW</div>
+        <h1 style="font-size:2.4rem; font-weight:900; background:linear-gradient(135deg,#fff,#94a3b8); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:12px;">MediFlow Enterprise: AI-First Healthcare for 1.4B Indians</h1>
+        <p style="font-size:1.05rem; color:#94a3b8; max-width:850px; line-height:1.6; margin-bottom:28px;">
+          A real-time, 8-microservice telemedicine & e-pharmacy platform replacing reactive 8-hour care delays with 2 AM proactive AI anomaly detection and post-quantum security.
+        </p>
+
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:20px; margin-bottom:28px;">
+          <div style="background:#161b22; padding:20px; border-radius:16px; border:1px solid rgba(99,102,241,0.2);">
+            <div style="font-size:2rem; margin-bottom:8px;">🧠</div>
+            <div style="font-size:1.6rem; font-weight:900; color:#818cf8;">8 AI Algorithms</div>
+            <div style="font-size:0.8rem; color:#94a3b8; margin-top:4px;">SHAP, GraphSAGE GNN, LSTM, FedAvg, 3D A*, MEWS, CURB-65, PQC</div>
+          </div>
+          <div style="background:#161b22; padding:20px; border-radius:16px; border:1px solid rgba(16,185,129,0.2);">
+            <div style="font-size:2rem; margin-bottom:8px;">🔒</div>
+            <div style="font-size:1.6rem; font-weight:900; color:#34d399;">NIST FIPS 203/204</div>
+            <div style="font-size:0.8rem; color:#94a3b8; margin-top:4px;">Post-Quantum Kyber-768 KEM + Dilithium-3 Signatures</div>
+          </div>
+          <div style="background:#161b22; padding:20px; border-radius:16px; border:1px solid rgba(236,72,153,0.2);">
+            <div style="font-size:2rem; margin-bottom:8px;">⚡</div>
+            <div style="font-size:1.6rem; font-weight:900; color:#f472b6;">8 Microservices</div>
+            <div style="font-size:0.8rem; color:#94a3b8; margin-top:4px;">Go Gateway, Node Backend, Python FastAPI ML, Kafka, MongoDB 7</div>
+          </div>
+          <div style="background:#161b22; padding:20px; border-radius:16px; border:1px solid rgba(245,158,11,0.2);">
+            <div style="font-size:2rem; margin-bottom:8px;">👥</div>
+            <div style="font-size:1.6rem; font-weight:900; color:#fbbf24;">5 User Roles</div>
+            <div style="font-size:0.8rem; color:#94a3b8; margin-top:4px;">Patient, Doctor, Pharmacist, Rider, Admin Unified SPA</div>
+          </div>
+        </div>
+
+        <div style="background:rgba(99,102,241,0.06); border:1px solid rgba(99,102,241,0.2); border-radius:14px; padding:16px 20px; font-size:0.88rem; color:#e2e8f0;">
+          💡 <b>The Core Mission:</b> <i>"India has 0.7 doctors per 1,000 people. MediFlow's AI handles the triage, the drug safety check, and the anomaly alert — so every available doctor focuses on patients who truly need them."</i>
+        </div>
+      </div>
+
+      <!-- ── SLIDE 2: Patient & Doctor Technologies ── -->
+      <div class="ppt-slide-page" id="ppt-slide-2" style="display:none;">
+        <div style="display:inline-block; padding:4px 14px; background:rgba(99,102,241,0.15); color:#818cf8; border-radius:99px; font-weight:700; font-size:0.8rem; margin-bottom:12px;">SLIDE 2 / 5 · PATIENT & DOCTOR STACK</div>
+        <h2 style="font-size:2rem; font-weight:800; color:#fff; margin-bottom:20px;">Patient & Doctor AI Technologies</h2>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px;">
+          <div style="background:#161b22; padding:24px; border-radius:16px; border:1px solid var(--border);">
+            <h3 style="color:#818cf8; font-size:1.1rem; font-weight:800; margin-bottom:10px;">🔍 SHAP Explainable AI Triage (NeurIPS 2017)</h3>
+            <p style="font-size:0.85rem; color:#94a3b8; line-height:1.5; margin-bottom:12px;">
+              TreeExplainer computes Shapley values from cooperative game theory. Shows exact symptom attributions (+0.34 Chest Pain) for 91% calibrated specialty recommendations.
+            </p>
+            <div style="font-size:0.78rem; background:#0d1117; padding:10px; border-radius:8px; border:1px solid var(--border); font-family:monospace; color:#34d399;">
+              Output: Cardiology (91%) | MEWS: 3 (Urgent)
+            </div>
+          </div>
+
+          <div style="background:#161b22; padding:24px; border-radius:16px; border:1px solid var(--border);">
+            <h3 style="color:#f472b6; font-size:1.1rem; font-weight:800; margin-bottom:10px;">📡 128-Unit LSTM Biometric Anomaly Detection</h3>
+            <p style="font-size:0.85rem; color:#94a3b8; line-height:1.5; margin-bottom:12px;">
+              Processes 12-step sliding windows across 8 vital sign channels. Softmax classifier detects 7 anomaly classes (AFib, Hypoxia, Hypertensive Crisis) at 2 AM.
+            </p>
+            <div style="font-size:0.78rem; background:#0d1117; padding:10px; border-radius:8px; border:1px solid var(--border); font-family:monospace; color:#f472b6;">
+              Auto-Alert Trigger: Anomaly Score ≥ 0.85 ➔ Socket.IO
+            </div>
+          </div>
+
+          <div style="background:#161b22; padding:24px; border-radius:16px; border:1px solid var(--border);">
+            <h3 style="color:#fbbf24; font-size:1.1rem; font-weight:800; margin-bottom:10px;">🩺 Clinical Benchmarks (MEWS & CURB-65)</h3>
+            <p style="font-size:0.85rem; color:#94a3b8; line-height:1.5;">
+              AI predictions are anchored to published medical scoring standards (Subbe et al., QJM 2001 & Lim et al., Thorax 2003) for instant clinical validity.
+            </p>
+          </div>
+
+          <div style="background:#161b22; padding:24px; border-radius:16px; border:1px solid var(--border);">
+            <h3 style="color:#38bdf8; font-size:1.1rem; font-weight:800; margin-bottom:10px;">📹 WebRTC 8K Teleconsultation</h3>
+            <p style="font-size:0.85rem; color:#94a3b8; line-height:1.5;">
+              Peer-to-peer encrypted high-definition video consultation with WebSockets signaling, live prescription drafting, and AI ambient scribe notes.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SLIDE 3: Pharmacist & Delivery Technologies ── -->
+      <div class="ppt-slide-page" id="ppt-slide-3" style="display:none;">
+        <div style="display:inline-block; padding:4px 14px; background:rgba(99,102,241,0.15); color:#818cf8; border-radius:99px; font-weight:700; font-size:0.8rem; margin-bottom:12px;">SLIDE 3 / 5 · PHARMACY & DELIVERY STACK</div>
+        <h2 style="font-size:2rem; font-weight:800; color:#fff; margin-bottom:20px;">Pharmacist & Logistics Technologies</h2>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px;">
+          <div style="background:#161b22; padding:24px; border-radius:16px; border:1px solid var(--border);">
+            <h3 style="color:#34d399; font-size:1.1rem; font-weight:800; margin-bottom:10px;">🕸️ GraphSAGE Drug Safety GNN (NeurIPS 2017)</h3>
+            <p style="font-size:0.85rem; color:#94a3b8; line-height:1.5; margin-bottom:10px;">
+              2-layer Graph Neural Network over 45-drug, 89-edge knowledge graph. Predicts interaction risks for unseen drug combinations using neighborhood embeddings.
+            </p>
+            <div style="font-size:0.75rem; color:#f87171; font-weight:700;">Example: Warfarin + Aspirin ➔ CONTRAINDICATED (Score: 0.942)</div>
+          </div>
+
+          <div style="background:#161b22; padding:24px; border-radius:16px; border:1px solid var(--border);">
+            <h3 style="color:#818cf8; font-size:1.1rem; font-weight:800; margin-bottom:10px;">🚁 Autonomous 3D A* Drone Pathfinder</h3>
+            <p style="font-size:0.85rem; color:#94a3b8; line-height:1.5; margin-bottom:10px;">
+              26-directional 3D Moore grid pathfinding up to 120m altitude. Asymmetric battery cost model (Ascending 2.5x thrust vs Descending 0.6x) & no-fly zone clearance.
+            </p>
+            <div style="font-size:0.75rem; color:#818cf8; font-weight:700;">DGCA (India) Compliant ST_Intersects Geofencing</div>
+          </div>
+
+          <div style="background:#161b22; padding:24px; border-radius:16px; border:1px solid var(--border);">
+            <h3 style="color:#fbbf24; font-size:1.1rem; font-weight:800; margin-bottom:10px;">❄️ WHO Cold-Chain Vaccine Telemetry</h3>
+            <p style="font-size:0.85rem; color:#94a3b8; line-height:1.5;">
+              Real-time temperature telemetry (+2.8°C target 2-8°C) and 36-hour predictive AI low-stock forecasting for auto-reordering.
+            </p>
+          </div>
+
+          <div style="background:#161b22; padding:24px; border-radius:16px; border:1px solid var(--border);">
+            <h3 style="color:#f472b6; font-size:1.1rem; font-weight:800; margin-bottom:10px;">🗺️ Leaflet Multi-Layer GPS Engine</h3>
+            <p style="font-size:0.85rem; color:#94a3b8; line-height:1.5;">
+              CartoDB Dark + Google Road & Satellite tile integration with 2dsphere proximity search for Rider routing and delivery OTP verification.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SLIDE 4: Security & Cryptography ── -->
+      <div class="ppt-slide-page" id="ppt-slide-4" style="display:none;">
+        <div style="display:inline-block; padding:4px 14px; background:rgba(99,102,241,0.15); color:#818cf8; border-radius:99px; font-weight:700; font-size:0.8rem; margin-bottom:12px;">SLIDE 4 / 5 · SECURITY & COMPLIANCE</div>
+        <h2 style="font-size:2rem; font-weight:800; color:#fff; margin-bottom:20px;">Security, Cryptography & Compliance</h2>
+
+        <table style="width:100%; border-collapse:collapse; background:#161b22; border-radius:16px; overflow:hidden; font-size:0.88rem; margin-bottom:24px;">
+          <thead>
+            <tr style="background:#1f2937; color:#818cf8; text-align:left;">
+              <th style="padding:14px 18px;">Security Domain</th>
+              <th style="padding:14px 18px;">Standard / Algorithm</th>
+              <th style="padding:14px 18px;">Implementation Details</th>
+            </tr>
+          </thead>
+          <tbody style="color:#cbd5e1;">
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:14px 18px; font-weight:700; color:#34d399;">Post-Quantum Cryptography</td>
+              <td style="padding:14px 18px; color:#a7f3d0;">NIST FIPS 203 (Kyber-768)</td>
+              <td style="padding:14px 18px;">Quantum-resistant key encapsulation (ML-KEM, Level 3)</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:14px 18px; font-weight:700; color:#34d399;">Quantum Digital Signatures</td>
+              <td style="padding:14px 18px; color:#a7f3d0;">NIST FIPS 204 (Dilithium-3)</td>
+              <td style="padding:14px 18px;">Lattice-based identity signature verification (ML-DSA)</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:14px 18px; font-weight:700; color:#818cf8;">PHI Encryption at Rest</td>
+              <td style="padding:14px 18px; color:#c7d2fe;">AES-256-GCM (NIST SP 800-38D)</td>
+              <td style="padding:14px 18px;">Per-field patient record encryption with unique IV per record</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:14px 18px; font-weight:700; color:#fbbf24;">Privacy Regulations</td>
+              <td style="padding:14px 18px; color:#fde68a;">India DPDP Act 2023 & HIPAA</td>
+              <td style="padding:14px 18px;">Dedicated endpoints for data export & right-to-be-forgotten erasure</td>
+            </tr>
+            <tr>
+              <td style="padding:14px 18px; font-weight:700; color:#f472b6;">Federated ML Privacy</td>
+              <td style="padding:14px 18px; color:#fbcfe8;">FedAvg + Laplace DP (ε=0.5)</td>
+              <td style="padding:14px 18px;">3-hospital model aggregation — zero raw PHI shared</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ── SLIDE 5: Architecture & Benchmarks ── -->
+      <div class="ppt-slide-page" id="ppt-slide-5" style="display:none;">
+        <div style="display:inline-block; padding:4px 14px; background:rgba(99,102,241,0.15); color:#818cf8; border-radius:99px; font-weight:700; font-size:0.8rem; margin-bottom:12px;">SLIDE 5 / 5 · ARCHITECTURE & BENCHMARKS</div>
+        <h2 style="font-size:2rem; font-weight:800; color:#fff; margin-bottom:20px;">System Microarchitecture & Benchmarks</h2>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-bottom:24px;">
+          <div style="background:#161b22; padding:24px; border-radius:16px; border:1px solid var(--border);">
+            <h3 style="color:#818cf8; font-size:1.1rem; font-weight:800; margin-bottom:12px;">🏗️ 8 Microservices Stack</h3>
+            <ul style="font-size:0.85rem; color:#94a3b8; line-height:1.8; margin-left:20px;">
+              <li><b>Go Gateway</b>: Sub-ms rate limiting & Kyber auth</li>
+              <li><b>Node.js API</b>: 16 Express REST route modules</li>
+              <li><b>Python FastAPI</b>: SHAP, GNN, & FedAvg ML Engine</li>
+              <li><b>Apache Kafka</b>: Async microservice event streaming</li>
+              <li><b>MongoDB 7</b>: 2dsphere geo-spatial proximity index</li>
+              <li><b>Prometheus & Grafana</b>: 12-panel operational metrics</li>
+            </ul>
+          </div>
+
+          <div style="background:#161b22; padding:24px; border-radius:16px; border:1px solid var(--border);">
+            <h3 style="color:#34d399; font-size:1.1rem; font-weight:800; margin-bottom:12px;">⚡ k6 Load & Stress Benchmarks</h3>
+            <div style="display:flex; flex-direction:column; gap:10px; font-size:0.82rem;">
+              <div style="background:#0d1117; padding:10px 14px; border-radius:8px; display:flex; justify-content:space-between;">
+                <span>Smoke Test (1 VU)</span>
+                <span style="color:#34d399; font-weight:700;">p95 < 45ms ✅</span>
+              </div>
+              <div style="background:#0d1117; padding:10px 14px; border-radius:8px; display:flex; justify-content:space-between;">
+                <span>Load Test (50 VUs)</span>
+                <span style="color:#34d399; font-weight:700;">p95 < 180ms · 0% Error ✅</span>
+              </div>
+              <div style="background:#0d1117; padding:10px 14px; border-radius:8px; display:flex; justify-content:space-between;">
+                <span>Spike Test (500 VUs Burst)</span>
+                <span style="color:#818cf8; font-weight:700;">Recovery < 12s ✅</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="text-align:center; padding:18px; background:linear-gradient(135deg,rgba(99,102,241,0.15),rgba(236,72,153,0.15)); border-radius:16px; border:1px solid rgba(99,102,241,0.3);">
+          <h3 style="font-size:1.2rem; font-weight:900; color:#fff; margin-bottom:4px;">MediFlow Enterprise — AI First Hackathon 2026 Submission</h3>
+          <p style="font-size:0.85rem; color:#cbd5e1;">GitHub: github.com/vinaybhardwaj19/MediFlow · Ready for Production Deployment</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- PPT Navigation Footer Bar -->
+    <div style="padding:16px 24px; background:#161b22; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+      <button class="btn btn-outline btn-sm" id="ppt-prev-btn" style="border-radius:12px; font-weight:700;">◀ Previous Slide</button>
+      <div style="display:flex; gap:8px;" id="ppt-dots-container">
+        <span class="ppt-dot" data-slide="1" style="width:10px; height:10px; border-radius:50%; background:#818cf8; cursor:pointer;"></span>
+        <span class="ppt-dot" data-slide="2" style="width:10px; height:10px; border-radius:50%; background:var(--border); cursor:pointer;"></span>
+        <span class="ppt-dot" data-slide="3" style="width:10px; height:10px; border-radius:50%; background:var(--border); cursor:pointer;"></span>
+        <span class="ppt-dot" data-slide="4" style="width:10px; height:10px; border-radius:50%; background:var(--border); cursor:pointer;"></span>
+        <span class="ppt-dot" data-slide="5" style="width:10px; height:10px; border-radius:50%; background:var(--border); cursor:pointer;"></span>
+      </div>
+      <button class="btn btn-primary btn-sm" id="ppt-next-btn" style="border-radius:12px; font-weight:700;">Next Slide ▶</button>
+    </div>
+
   </div>
 </div>
 

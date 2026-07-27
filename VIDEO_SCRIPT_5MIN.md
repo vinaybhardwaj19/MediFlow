@@ -1,101 +1,96 @@
-# 🎬 MediFlow Enterprise — 5-Minute Multi-Tab Live Demo Script
-## Multi-Role Localhost Demo Walkthrough for Hackathon Judges
+# 🎬 MediFlow Enterprise — 5-Minute Pitch & PPT Video Script
+## Easy-to-Speak Plain English Script for Hackathon Judges
 
 ---
 
-## 💻 PRE-RECORDING TAB SETUP (Do this 2 minutes before recording)
+## 💻 PRE-RECORDING SETUP (2 minutes before pressing record)
 
-Open **4 Browser Tabs** (or Windows) on `http://localhost:5050` using the Exhibition Quick Access buttons:
-
-- **Tab 1 — PATIENT**: Click "Get Started Free" ➔ Sign In ➔ Click **Patient** button
-- **Tab 2 — DOCTOR**: Open new Incognito/Browser Tab ➔ Sign In ➔ Click **Doctor** button
-- **Tab 3 — PHARMACIST**: Open new Tab ➔ Sign In ➔ Click **Pharmacist** button
-- **Tab 4 — RIDER**: Open new Tab ➔ Sign In ➔ Click **Rider** button
-
-Now you can click through Tab 1 ➔ Tab 2 ➔ Tab 3 ➔ Tab 4 smoothly without logging out or re-typing passwords on video!
+1. Open **`http://localhost:5050`** in your browser.
+2. Prepare **4 Tabs** (or windows) open on `http://localhost:5050`:
+   - **Tab 1**: Patient (Click *Get Started Free* ➔ *Patient* button)
+   - **Tab 2**: Doctor (Click *Get Started Free* ➔ *Doctor* button)
+   - **Tab 3**: Pharmacist (Click *Get Started Free* ➔ *Pharmacist* button)
+   - **Tab 4**: Rider (Click *Get Started Free* ➔ *Rider* button)
+3. Notice the top button: **`📽️ Tech Slide Deck (5-Page PPT)`**. You will click this in Minute 4!
 
 ---
 
-## ⏱️ MINUTE 1: Intro & Problem Statement (0:00 – 1:00)
+## ⏱️ MINUTE 1: Intro & The Big Problem (0:00 – 1:00)
 
 **[Screen Action: Show Tab 1 — MediFlow Home Page]**
 
 **What to Say (Plain English):**
-> "Hello everyone! Today I’m demonstrating **MediFlow Enterprise**, an AI-first telemedicine platform for India.
+> "Hello everyone! Welcome to our demo of **MediFlow Enterprise**, an AI-first healthcare platform built for 1.4 billion people in India.
 > 
-> India has a critical healthcare shortage: only 0.7 doctors for every 1,000 people, with 80% located in big cities. Furthermore, nearly 2 million hospitalizations occur every year due to adverse drug interactions.
+> India has a critical healthcare challenge: there are only 0.7 doctors for every 1,000 people, and 80% live in big cities. On top of that, nearly 2 million hospitalizations happen every year just because of bad drug interactions.
 > 
-> Instead of waiting hours for a morning clinic, MediFlow operates in real time across 5 distinct user roles.
+> Most healthcare today is reactive: if a patient gets sick at 2 AM, they wait until 9 AM to see a doctor. 
 > 
-> In this 5-minute demo, I will show you our live multi-role workflow running on localhost: from Patient AI triage, to Doctor consultation, to Pharmacist drone dispatch, and Rider delivery."
+> MediFlow changes this completely. Our platform operates in real time across 5 distinct user roles. In this 5-minute demo, I will show you our live multi-role workflow and then walk through our tech stack using our built-in 5-page presentation deck."
 
 ---
 
-## ⏱️ MINUTE 2: Tab 1 — Patient AI Triage & SHAP Explanation (1:00 – 2:00)
+## ⏱️ MINUTE 2: Tab 1 & Tab 2 Demo — Patient AI Triage & Doctor Queue (1:00 – 2:00)
 
-**[Screen Action: Switch to Tab 1 (Patient) ➔ Click Triage / Symptom Checker]**
+**[Screen Action: On Tab 1 (Patient), type 'chest pain' & 'shortness of breath' ➔ Submit Triage]**
+**[Screen Action: Point to SHAP Explainability card ➔ Switch to Tab 2 (Doctor)]**
 
 **What to Say (Plain English):**
-> "Here on Tab 1, I am logged in as a Patient. Let me report symptoms: **'chest pain'** and **'shortness of breath'**.
+> "Let’s start with Tab 1 — the Patient view. When a patient reports symptoms like **'chest pain'** and **'shortness of breath'**, our AI model recommends **Cardiology** with 91% confidence.
 > 
-> When I hit submit, our Random Forest AI model instantly recommends **Cardiology** with 91% confidence.
+> But instead of a black-box guess, MediFlow uses **Explainable AI (SHAP)**. It displays a visual breakdown showing *why*: Chest pain added +0.34 to Cardiology risk, and shortness of breath added +0.21. It also calculates a MEWS severity score of 3 for urgent care.
 > 
-> But instead of a black-box answer, MediFlow provides **Explainable AI (SHAP)**. 
-> The interactive breakdown shows exactly why the decision was made: Chest pain contributed +0.34 to Cardiology risk, and shortness of breath added +0.21. 
-> 
-> It also calculates a clinical early warning score (MEWS) of 3, flagging this as an urgent case."
+> Now switching to Tab 2 — the Doctor's Workspace. The doctor sees the patient in their priority queue. When drafting a prescription, our **Graph Neural Network** checks drug safety. If the doctor selects Warfarin and Aspirin together, the AI immediately flags a **SEVERE CONTRAINDICATION** warning for bleeding risk."
 
 ---
 
-## ⏱️ MINUTE 3: Tab 2 — Doctor Workspace & Drug Safety GNN (2:00 – 3:00)
+## ⏱️ MINUTE 3: Tab 3 & Tab 4 Demo — Pharmacist & Rider Delivery (2:00 – 3:00)
 
-**[Screen Action: Switch to Tab 2 (Doctor Workspace)]**
+**[Screen Action: Switch to Tab 3 (Pharmacist) ➔ Point to Cold Chain Widget & Drone Tracker]**
+**[Screen Action: Switch to Tab 4 (Rider) ➔ Point to Live Route Telemetry & OTP]**
 
 **What to Say (Plain English):**
-> "Now let me switch to Tab 2 — the Doctor's Workspace. 
+> "Switching to Tab 3 — the Pharmacist Dashboard. Here you can see our WHO-certified **Cold-Chain Vaccine Telemetry** keeping fridge temperatures safe at +2.8°C, alongside an AI Stock Predictor that forecasts low inventory 36 hours in advance. 
 > 
-> The doctor immediately sees the incoming patient in their priority queue, along with the patient’s live vitals monitor and SHAP triage explanation.
+> For remote areas, MediFlow has an **Autonomous 3D Drone Delivery Router** that computes flight paths in 3D space up to 120 meters altitude while avoiding no-fly zones.
 > 
-> When writing a prescription, our **Graph Neural Network (GraphSAGE GNN)** checks drug safety in real time. 
-> If the doctor selects **Warfarin** and **Aspirin**, the system flags a **SEVERE CONTRAINDICATION** warning for internal bleeding risk — protecting the patient before the prescription is issued.
-> 
-> Once approved, the prescription is submitted to the pharmacy network."
+> Now switching to Tab 4 — the Rider Hub. Riders get live weather and traffic telemetry, cold-chain package temperature monitoring, and a 4-digit OTP verification system upon delivery to ensure medicines reach the right patient."
 
 ---
 
-## ⏱️ MINUTE 4: Tab 3 & 4 — Pharmacist Drone Dispatch & Rider Delivery (3:00 – 4:00)
+## ⏱️ MINUTE 4: Switch to Localhost Tech Presentation PPT (3:00 – 4:00)
 
-**[Screen Action: Switch to Tab 3 (Pharmacist) ➔ Show Drone Tracker]**
-**[Screen Action: Switch to Tab 4 (Rider Dashboard) ➔ Show Leaflet Map & OTP]**
+**[Screen Action: Click '📽️ Tech Slide Deck (5-Page PPT)' button on the top role bar]**
+**[Screen Action: Click Next Slide ▶ to move through Slide 1, 2, and 3]**
 
 **What to Say (Plain English):**
-> "Let's switch to Tab 3 — the Pharmacist Dashboard.
+> "Now, let’s open our built-in 5-page Tech Slide Deck directly inside localhost!
 > 
-> The pharmacist receives the order. For emergency medicines in hard-to-reach areas, MediFlow has an **Autonomous 3D Drone Router**. 
-> Our 3D A-Star algorithm computes a 3D flight trajectory up to 120 meters altitude, automatically bypassing government no-fly zones and calculating battery cost for climbing.
+> **Slide 1** shows our executive overview: 8 microservices, 8 published AI algorithms, and 5 user roles built for scale.
 > 
-> Now switching to Tab 4 — the Rider Delivery Hub. 
-> For ground deliveries, riders get a live Leaflet routing map, real-time GPS tracking, and a secure 4-digit OTP verification system upon delivery to ensure medicine reaches the right hands."
+> **Slide 2** details the Patient and Doctor tech stack: SHAP TreeExplainer from NeurIPS 2017 for explainable triage, a 128-unit LSTM Neural Network for 2 AM biometric anomaly alerts, MEWS clinical scores, and WebRTC 8K video consulting.
+> 
+> **Slide 3** highlights the Pharmacist and Delivery stack: GraphSAGE Graph Neural Networks for drug safety over a 45-drug graph, 3D A-Star drone pathfinding with DGCA geofencing, and Leaflet GPS mapping."
 
 ---
 
-## ⏱️ MINUTE 5: Security, Scale & Conclusion (4:00 – 5:00)
+## ⏱️ MINUTE 5: Slide 4 & 5 — Security, Architecture & Conclusion (4:00 – 5:00)
 
-**[Screen Action: Show Care Timeline / Architecture Diagram]**
+**[Screen Action: Click Next Slide ▶ to show Slide 4 (Security) and Slide 5 (Architecture)]**
+**[Screen Action: Press Escape to close PPT modal ➔ Show final landing page]**
 
 **What to Say (Plain English):**
-> "Finally, security and infrastructure.
+> "**Slide 4** covers our security and compliance: 
+> We implement **NIST Post-Quantum Cryptography** — Kyber-768 for key encapsulation and Dilithium-3 for digital signatures — to keep data safe against future quantum computers. 
+> Every record is encrypted with **AES-256-GCM**, and we are fully compliant with **India's DPDP Act 2023** with data export and deletion APIs.
 > 
-> All patient records are encrypted at rest with **AES-256-GCM** encryption. We fully comply with **India's DPDP Act 2023** with data export and erasure features.
+> **Slide 5** shows our 8-microservice architecture powered by Go, Node.js, Python FastAPI, Apache Kafka, MongoDB 2dsphere, and Prometheus/Grafana monitoring, passing k6 load tests up to 500 virtual users.
 > 
-> For long-term security, MediFlow implements **NIST Post-Quantum Cryptography** (Kyber-768 key encapsulation and Dilithium-3 digital signatures) to protect data against future quantum threats.
-> 
-> Everything runs on an 8-microservice architecture with Node.js, Python FastAPI, Go, Kafka, MongoDB, and Prometheus/Grafana monitoring.
-> 
-> MediFlow connects patients, doctors, pharmacists, and riders in one seamless, AI-powered healthcare ecosystem. Thank you!"
+> MediFlow brings proactive, explainable, and quantum-safe healthcare to every corner of India. Thank you so much for your time!"
 
 ---
 
-## 💡 TIP FOR SMOOTH DEMO RECORDING:
-- Keep Tab 1 (Patient), Tab 2 (Doctor), Tab 3 (Pharmacist), and Tab 4 (Rider) already logged in before pressing record on OBS/Loom!
-- Just press `Ctrl + Tab` to jump between roles seamlessly on video!
+## 💡 HINTS FOR RECORDING:
+- **Opening the PPT**: Just click the **`📽️ Tech Slide Deck (5-Page PPT)`** button on the top role bar during Minute 4.
+- **Navigating Slides**: Use your `Right Arrow Key ▶` on your keyboard to advance slides effortlessly!
+- **Closing PPT**: Press `Escape` key or click `✕` at top right.

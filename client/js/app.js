@@ -806,7 +806,58 @@ async function bootstrap() {
   initOCRScanner();
   initDoctorRating();
   autoPromptGPS();
+  initPPTDeck();
 }
+
+function initPPTDeck() {
+  const modal = document.getElementById('ppt-slide-modal');
+  const openBtn = document.getElementById('btn-open-ppt-bar');
+  const closeBtn = document.getElementById('ppt-close-btn');
+  const prevBtn = document.getElementById('ppt-prev-btn');
+  const nextBtn = document.getElementById('ppt-next-btn');
+  const indicator = document.getElementById('ppt-slide-indicator');
+  const dots = document.querySelectorAll('.ppt-dot');
+
+  if (!modal) return;
+
+  let currentSlide = 1;
+  const totalSlides = 5;
+
+  const showSlide = (n) => {
+    currentSlide = Math.max(1, Math.min(totalSlides, n));
+    for (let i = 1; i <= totalSlides; i++) {
+      const slide = document.getElementById(`ppt-slide-${i}`);
+      if (slide) slide.style.display = i === currentSlide ? 'block' : 'none';
+    }
+    if (indicator) indicator.textContent = `Slide ${currentSlide} of ${totalSlides}`;
+    dots.forEach(d => {
+      const isTarget = parseInt(d.dataset.slide) === currentSlide;
+      d.style.background = isTarget ? '#818cf8' : 'var(--border)';
+    });
+  };
+
+  openBtn?.addEventListener('click', () => {
+    modal.classList.remove('hidden');
+    showSlide(1);
+  });
+
+  closeBtn?.addEventListener('click', () => modal.classList.add('hidden'));
+
+  prevBtn?.addEventListener('click', () => showSlide(currentSlide - 1));
+  nextBtn?.addEventListener('click', () => showSlide(currentSlide + 1));
+
+  dots.forEach(d => {
+    d.addEventListener('click', () => showSlide(parseInt(d.dataset.slide)));
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (modal.classList.contains('hidden')) return;
+    if (e.key === 'ArrowRight' || e.key === 'PageDown') showSlide(currentSlide + 1);
+    if (e.key === 'ArrowLeft' || e.key === 'PageUp') showSlide(currentSlide - 1);
+    if (e.key === 'Escape') modal.classList.add('hidden');
+  });
+}
+
 bootstrap().catch(err => console.error('[MediFlow] Bootstrap error:', err));
 
 function renderRoleSpecificInsights(role) {
