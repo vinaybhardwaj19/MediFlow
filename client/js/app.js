@@ -334,12 +334,12 @@ async function loadDashboard() {
     initRealSensors();
   } catch (e) { console.warn('Vitals init fail', e); }
 
-  initLocationIntelligence();
-  initCompanion();
-  initMarketplace();
-  initLabs();
-  initTimeline();
-  initRiderDashboard();
+  try { initLocationIntelligence(); } catch (e) { console.warn('[App] Location init fail:', e); }
+  try { initCompanion(); } catch (e) { console.warn('[App] Companion init fail:', e); }
+  try { initMarketplace(); } catch (e) { console.warn('[App] Marketplace init fail:', e); }
+  try { initLabs(); } catch (e) { console.warn('[App] Labs init fail:', e); }
+  try { initTimeline(); } catch (e) { console.warn('[App] Timeline init fail:', e); }
+  try { initRiderDashboard(); } catch (e) { console.warn('[App] Rider dashboard init fail:', e); }
 
   document.getElementById('btn-toggle-devices')?.addEventListener('click', () => {
     document.getElementById('device-manager-panel')?.classList.toggle('hidden');

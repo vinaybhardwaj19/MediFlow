@@ -117,8 +117,18 @@ function loadGoogleMapsSDK(apiKey) {
       }
       console.log('[Location] Google Maps SDK loaded successfully.');
       if (_currentTheme.startsWith('google-')) {
-        setupMap();
+        try { setupMap(); } catch (e) { console.warn('[Location] Google setupMap fail:', e); }
       }
+    };
+    script.onerror = () => {
+      console.warn('[Location] Google Maps SDK failed to load. Falling back to Leaflet tiles.');
+      _currentTheme = 'carto-dark';
+      try { setupMap(); } catch (e) {}
+    };
+    window.gm_authFailure = () => {
+      console.warn('[Location] Google Maps auth failure. Falling back to Carto dark tile layer.');
+      const badge = document.getElementById('map-provider-badge');
+      if (badge) { badge.textContent = 'Leaflet Maps'; badge.style.background = 'var(--primary)'; }
     };
   }
 }
@@ -147,8 +157,9 @@ function updateMapTileLayer() {
 }
 
 function setupMap() {
-  const mapDiv = document.getElementById('location-map');
-  if (!mapDiv) return;
+  try {
+    const mapDiv = document.getElementById('location-map');
+    if (!mapDiv) return;
 
   const badge = document.getElementById('map-provider-badge');
 
@@ -231,7 +242,7 @@ function setupMap() {
     });
 
     loadNearbyProviders();
-  }
+  } } catch (err) { console.warn('[Location] setupMap fail:', err); }
 }
 
 export async function autoPromptGPS() {

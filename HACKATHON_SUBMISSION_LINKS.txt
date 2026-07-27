@@ -1,0 +1,49 @@
+================================================================================
+          MEDIFLOW ENTERPRISE — HACKATHON SUBMISSION DOCUMENT
+          (Copy & Paste this content into your Google Doc inside Google Drive)
+================================================================================
+
+TEAM DETAILS:
+--------------------------------------------------------------------------------
+Team Name       : [YOUR TEAM NAME]
+Team Leader     : Vinay Bhardwaj
+Contact Email   : vinaybhardwajoct1@gmail.com
+Project Name    : MediFlow Enterprise — AI-First Telemedicine for Bharat 🇮🇳
+
+SUBMISSION LINKS:
+--------------------------------------------------------------------------------
+1. Source Code Repository (GitHub):
+   https://github.com/vinaybhardwaj19/MediFlow
+
+2. Technical Documentation (README.md):
+   https://github.com/vinaybhardwaj19/MediFlow/blob/master/README.md
+
+3. Architecture & System Diagrams (ARCHITECTURE.md):
+   https://github.com/vinaybhardwaj19/MediFlow/blob/master/docs/ARCHITECTURE.md
+
+4. Product Demo Video Link:
+   [PASTE YOUR YOUTUBE / LOOM VIDEO LINK HERE]
+
+5. Live Prototype / Local Build Instructions:
+   http://localhost:5000 (Run `docker compose up` or `npm run dev`)
+
+--------------------------------------------------------------------------------
+DEMO CREDENTIALS (FOR JUDGES):
+--------------------------------------------------------------------------------
+- Patient Role   : patient@mediflow.com    / Password: Demo1234!
+- Doctor Role    : doctor@mediflow.com     / Password: Demo1234!
+- Pharmacist Role: pharmacist@mediflow.com / Password: Demo1234!
+- Rider Role     : rider@mediflow.com      / Password: Demo1234!
+
+(One-Click Exhibition Mode available on login screen)
+
+--------------------------------------------------------------------------------
+PROJECT HIGHLIGHTS:
+--------------------------------------------------------------------------------
+- 8 Published AI Algorithms in Production Code (SHAP XAI, LSTM Anomaly Detection, 
+  GraphSAGE GNN Drug Safety, FedAvg Federated Learning, 3D A* Drone Pathfinding, 
+  NIST FIPS 203/204 Post-Quantum Cryptography, MEWS/CURB-65 Clinical Scoring, AES-256-GCM PHI).
+- 8 Microservices (Go Gateway, Node.js API, Python FastAPI ML Engine, Kafka, MongoDB).
+- 22 Unit Tests passing + 4 k6 Performance Load Testing Scripts.
+- India DPDP Act 2023 & HIPAA Compliant Data Export/Erasure APIs.
+================================================================================
