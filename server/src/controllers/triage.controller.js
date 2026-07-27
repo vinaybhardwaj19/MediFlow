@@ -4,7 +4,9 @@
 const ApiResponse     = require('../utils/ApiResponse');
 const ApiError        = require('../utils/ApiError');
 const TriageRecord    = require('../models/TriageRecord.model');
+const User            = require('../models/User.model');
 const { predictSpecialty, EMERGENCY_KEYWORDS } = require('../services/triage.service');
+const { sendSMS }     = require('../utils/twilio');
 const { v4: uuidv4 } = require('uuid');
 
 /** POST /api/v1/triage */
@@ -19,6 +21,42 @@ exports.submitTriage = async (req, res) => {
   // Call ML service (with fallback inside triage.service)
   const mlPrediction = await predictSpecialty({ symptoms, symptomDetails, vitalSigns });
 
+  // Map urgency level and symptoms to Severity and Recommendations (Intelligent Severity Engine)
+  let severity = 'LOW';
+  let recommendation = 'Self care';
+  let recommendationDetails = 'Based on your mild symptoms, we recommend self-care and monitoring. If symptoms persist or worsen, please schedule an appointment.';
+
+  const urgency = mlPrediction.urgencyLevel?.toLowerCase() || 'routine';
+  const hasEmergencyFlags = ruleBasedFlags.length > 0;
+  
+  // Check vital signs for high-risk values
+  const sysBP = vitalSigns?.systolicBP;
+  const hr = vitalSigns?.heartRate;
+  const spo2 = vitalSigns?.oxygenSaturation;
+  
+  if (urgency === 'emergency' || hasEmergencyFlags || (spo2 && spo2 < 90) || (sysBP && (sysBP < 90 || sysBP > 180))) {
+    severity = 'CRITICAL';
+    recommendation = 'Emergency Response';
+    recommendationDetails = 'CRITICAL: High-risk symptoms or abnormal vital signs detected. Please trigger the emergency SOS workflow immediately for guidance and hospital routing.';
+  } else if (urgency === 'urgent' || (spo2 && spo2 < 94) || (hr && (hr < 50 || hr > 110))) {
+    severity = 'HIGH';
+    recommendation = 'Priority consultation';
+    recommendationDetails = 'HIGH: Elevated risk markers found. We recommend initiating a priority telemedicine consultation with a specialist immediately.';
+  } else if (symptomDetails?.severity === 'severe' || urgency === 'urgent') {
+    severity = 'MEDIUM';
+    recommendation = 'Appointment';
+    recommendationDetails = 'MEDIUM: Moderate severity. We recommend booking a regular consultation/appointment with a doctor soon.';
+  } else {
+    severity = 'LOW';
+    recommendation = 'Self care';
+    recommendationDetails = 'LOW: Mild symptoms. Standard self-care and rest is advised. Monitor your vitals.';
+  }
+
+  // Populate model values
+  mlPrediction.severity = severity;
+  mlPrediction.recommendation = recommendation;
+  mlPrediction.recommendationDetails = recommendationDetails;
+
   const record = await TriageRecord.create({
     patientId    : req.user?.id || null,
     sessionId    : req.user ? undefined : uuidv4(),
@@ -28,6 +66,21 @@ exports.submitTriage = async (req, res) => {
     mlPrediction,
     ruleBasedFlags,
   });
+
+  // If severity is HIGH or CRITICAL, fire-and-forget SMS alert (non-blocking, skipped in test env)
+  if (req.user && (severity === 'HIGH' || severity === 'CRITICAL') && process.env.NODE_ENV !== 'test') {
+    setImmediate(async () => {
+      try {
+        const user = await User.findById(req.user.id);
+        if (user && user.phone) {
+          const alertMsg = `MediFlow Alert: ${severity} priority warning. Recommended Specialty: ${mlPrediction.recommendedSpecialty}. Vitals: SBP: ${vitalSigns?.systolicBP || 'N/A'}, HR: ${vitalSigns?.heartRate || 'N/A'}, SpO2: ${vitalSigns?.oxygenSaturation || 'N/A'}%. Advice: ${recommendationDetails}`;
+          await sendSMS(user.phone, alertMsg);
+        }
+      } catch (err) {
+        console.error('[Triage SMS] Error sending alert:', err.message);
+      }
+    });
+  }
 
   return ApiResponse.created(res, record, 'Triage assessment complete');
 };

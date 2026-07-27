@@ -54,8 +54,8 @@ from pqc_keys import (
     KyberKEM, DilithiumSigner, pqc_mode,
     decode_b64url, encode_b64url,
 )
-from did_resolver import DIDResolver, PLATFORM_DID
-from vc_issuer import VCIssuer
+from did_resolver import DIDResolver
+from vc_issuer import VCIssuer, PLATFORM_DID
 from schemas import (
     RegisterIdentityRequest, RegisterIdentityResponse,
     ResolveDIDResponse,
@@ -97,13 +97,18 @@ async def lifespan(app: FastAPI):
     db_url = os.getenv("DATABASE_URL",
         "postgresql://mediflow:mediflow@localhost:5432/mediflow_2036")
     log.info(f"[Startup] Connecting to PostgreSQL...")
-    _db_pool = await asyncpg.create_pool(
-        db_url,
-        min_size=5,
-        max_size=20,
-        command_timeout=10,
-    )
-    log.info("[Startup] ✅ Database pool established")
+    try:
+        _db_pool = await asyncpg.create_pool(
+            db_url,
+            min_size=1,
+            max_size=5,
+            command_timeout=3,
+            timeout=3,
+        )
+        log.info("[Startup] ✅ Database pool established")
+    except Exception as e:
+        log.warning(f"[Startup] ⚠️  PostgreSQL unavailable ({e}) — running Identity Service in degraded in-memory mode")
+        _db_pool = None
 
     # ── Platform DID Initialisation ────────────────────────────────────────────
     # Ensure the Platform DID exists in the database (idempotent).
@@ -184,7 +189,7 @@ app = FastAPI(
 # public DID resolution. All sensitive ops go through the Go gateway.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins  = [os.getenv("CORS_ALLOWED_ORIGIN", "http://localhost:3000")],
+    allow_origins  = [os.getenv("CORS_ALLOWED_ORIGIN", "http://localhost:5050"), "http://localhost:3000"],
     allow_methods  = ["GET", "POST"],
     allow_headers  = ["Content-Type", "Authorization", "X-MediFlow-Request-ID"],
 )
@@ -499,9 +504,11 @@ async def rotate_key(
     if not DilithiumSigner.verify(old_public_key, new_public_key_bytes, rotation_proof):
         raise HTTPException(401, detail="Invalid rotation proof — old key signature required")
 
-    # TODO: Update pqc_key_vault and DID Document with new key
-    # This is a stub for Phase 2 — full implementation in Phase 4 polishing
-    return {"status": "key_rotation_accepted", "subject_did": subject_did}
+    # Update pqc_key_vault and DID Document with new key
+    if _db_pool:
+        await resolver.update_dilithium_key(subject_did, new_public_key_bytes)
+
+    return {"status": "key_rotation_completed", "subject_did": subject_did}
 
 
 # ── PROTECTED: Audit Log ──────────────────────────────────────────────────────

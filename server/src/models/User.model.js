@@ -27,7 +27,7 @@ const userSchema = new mongoose.Schema({
   lastName   : { type: String, required: true, trim: true, maxlength: 60 },
   email      : { type: String, required: true, unique: true, lowercase: true, trim: true, index: true },
   passwordHash: { type: String, required: true, select: false }, // NEVER returned in API responses
-  role       : { type: String, enum: ['patient','doctor','pharmacist','admin'], required: true },
+  role       : { type: String, enum: ['patient','doctor','pharmacist','admin','rider','worker'], required: true },
   phone      : { type: String, trim: true },        // E.164 format validated at route layer
   dateOfBirth: Date,
   gender     : { type: String, enum: ['male','female','other','prefer_not_to_say'] },
@@ -38,6 +38,7 @@ const userSchema = new mongoose.Schema({
   twoFactorEnabled: { type: Boolean, default: false },
   twoFactorSecret : { type: String, select: false }, // AES-256 encrypted at rest
   lastLogin  : Date,
+  onboardingData: { type: mongoose.Schema.Types.Mixed }, // Store license, vehicle info, etc.
   refreshTokens: {
     type: [refreshTokenSchema],
     select: false,

@@ -1,0 +1,476 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Summer School 26 — AI First Hackathon | IIT Jammu x Techible</title>
+  <meta name="description" content="National-level AI innovation challenge at IIT Jammu. Build real-world AI solutions, compete for Rs 30,000 prize pool."/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+<div class="bg-canvas">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+  <div class="grid-overlay"></div>
+</div>
+
+<nav class="navbar" id="navbar">
+  <div class="nav-container">
+    <a href="#" class="nav-logo">
+      <span class="logo-mark">&#9889;</span>
+      <span class="logo-text">Techible</span>
+    </a>
+    <div class="nav-links">
+      <a href="#about">About</a>
+      <a href="#tracks">Tracks</a>
+      <a href="#schedule">Schedule</a>
+      <a href="#prizes">Prizes</a>
+    </div>
+    <div class="nav-actions">
+      <a href="mailto:summerschool@iitjammu.ac.in" class="btn-nav">Contact</a>
+    </div>
+    <button class="nav-hamburger" id="hamburger" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu">
+  <a href="#about">About</a>
+  <a href="#tracks">Tracks</a>
+  <a href="#schedule">Schedule</a>
+  <a href="#prizes">Prizes</a>
+  <a href="mailto:summerschool@iitjammu.ac.in">Contact</a>
+</div>
+
+<section class="hero" id="home">
+  <div class="hero-content">
+    <div class="organizer-logos">
+      <div class="org-chip">IIT Jammu</div>
+      <div class="org-divider">x</div>
+      <div class="org-chip">Techible</div>
+      <div class="org-divider">x</div>
+      <div class="org-chip">I3C</div>
+    </div>
+    <h1 class="hero-title">
+      <span class="title-line-1">Summer School</span>
+      <span class="title-line-2">
+        <span class="year-badge">&#8217;26</span>
+        <span class="ai-text">AI First</span>
+      </span>
+      <span class="title-line-3">Hackathon</span>
+    </h1>
+    <p class="hero-subtitle">
+      Build impactful, real-world AI solutions in a national-level innovation challenge.
+      Idea &#8594; Prototype &#8594; Live Demo. <span class="highlight-text">&#8377;30,000 prize pool awaits.</span>
+    </p>
+    <div class="hero-meta">
+      <div class="meta-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span>July 15 &#8211; 31, 2026</span>
+      </div>
+      <div class="meta-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        <span>Online &#183; Unlimited Capacity</span>
+      </div>
+      <div class="meta-item price-chip">
+        <span>&#8377;750/team</span>
+      </div>
+    </div>
+    <div class="hero-cta">
+      <a href="#schedule" class="btn-primary">
+        <span>View Schedule</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </a>
+      <a href="#prizes" class="btn-secondary">Explore Prizes</a>
+    </div>
+    <div class="hero-badge">
+      <span class="badge-dot"></span>
+      <span>Registration Closed &#183; July 16, 2026</span>
+    </div>
+  </div>
+  <div class="hero-stats">
+    <div class="stat-card" data-delay="0">
+      <div class="stat-number" data-target="500">0</div>
+      <div class="stat-suffix">+</div>
+      <div class="stat-label">Active Internships</div>
+    </div>
+    <div class="stat-card" data-delay="150">
+      <div class="stat-number" data-target="50">0</div>
+      <div class="stat-suffix">+</div>
+      <div class="stat-label">Top Institutes</div>
+    </div>
+    <div class="stat-card" data-delay="300">
+      <div class="stat-number" data-target="200">0</div>
+      <div class="stat-suffix">+</div>
+      <div class="stat-label">Expert Mentors</div>
+    </div>
+    <div class="stat-card" data-delay="450">
+      <div class="stat-number" data-target="30000">0</div>
+      <div class="stat-suffix"></div>
+      <div class="stat-label">Prize Pool (&#8377;)</div>
+    </div>
+  </div>
+</section>
+
+<section class="about-section" id="about">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-tag">About the Event</div>
+      <h2 class="section-title">Build with AI.<br/>Innovate with Purpose.<br/><span class="gradient-text">Pitch for Impact.</span></h2>
+    </div>
+    <div class="about-grid">
+      <div class="about-text">
+        <p class="about-lead">Summer School 2026 — AI First Hackathon at IIT Jammu in collaboration with Techible &amp; I3C is a national-level innovation challenge bringing together students from across India to build impactful, real-world AI solutions.</p>
+        <p>Over three competitive rounds, participants will move from <strong>idea &#8594; functional prototype</strong>, leveraging cutting-edge technologies across the full spectrum of modern AI.</p>
+        <div class="tech-tags">
+          <span class="tech-tag">Generative AI</span>
+          <span class="tech-tag">LLMs</span>
+          <span class="tech-tag">AI Agents</span>
+          <span class="tech-tag">Computer Vision</span>
+          <span class="tech-tag">ML</span>
+          <span class="tech-tag">Multimodal AI</span>
+          <span class="tech-tag">Automation</span>
+        </div>
+      </div>
+      <div class="about-values">
+        <div class="value-card">
+          <div class="value-icon">&#128640;</div>
+          <h3>Rapid Prototyping</h3>
+          <p>From concept to working MVP in a time-boxed sprint environment designed for innovation.</p>
+        </div>
+        <div class="value-card">
+          <div class="value-icon">&#129309;</div>
+          <h3>Interdisciplinary Collaboration</h3>
+          <p>Teams of 2&#8211;3 from diverse backgrounds building across domains.</p>
+        </div>
+        <div class="value-card">
+          <div class="value-icon">&#128161;</div>
+          <h3>Entrepreneurial Thinking</h3>
+          <p>Innovation over perfection &#8212; originality, feasibility, and real impact matter most.</p>
+        </div>
+        <div class="value-card">
+          <div class="value-icon">&#127919;</div>
+          <h3>Expert Jury</h3>
+          <p>Live demo sessions before industry-leading AI professionals and researchers.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="tracks-section" id="tracks">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-tag">Challenge Tracks</div>
+      <h2 class="section-title">Choose Your <span class="gradient-text">Domain</span></h2>
+      <p class="section-desc">Six challenge tracks tackling real problems that matter to society and industry alike.</p>
+    </div>
+    <div class="tracks-grid">
+      <div class="track-card" style="--track-color:#7c3aed;">
+        <div class="track-number">01</div>
+        <div class="track-icon">&#127891;</div>
+        <h3>AI for Education &amp; Skill Development</h3>
+        <p>Reimagine learning with intelligent, personalized AI-driven educational platforms.</p>
+        <div class="track-glow"></div>
+      </div>
+      <div class="track-card" style="--track-color:#0ea5e9;">
+        <div class="track-number">02</div>
+        <div class="track-icon">&#127973;</div>
+        <h3>AI for Healthcare &amp; Well-being</h3>
+        <p>Leverage AI to improve diagnostics, mental health, and accessible care delivery.</p>
+        <div class="track-glow"></div>
+      </div>
+      <div class="track-card" style="--track-color:#10b981;">
+        <div class="track-number">03</div>
+        <div class="track-icon">&#127807;</div>
+        <h3>AI for Sustainability &amp; Climate Action</h3>
+        <p>Build AI solutions that address climate change, energy efficiency, and sustainability.</p>
+        <div class="track-glow"></div>
+      </div>
+      <div class="track-card" style="--track-color:#f59e0b;">
+        <div class="track-number">04</div>
+        <div class="track-icon">&#127470;&#127475;</div>
+        <h3>AI for Bharat: Governance &amp; Social Impact</h3>
+        <p>Solve India-specific governance and social challenges using AI-first approaches.</p>
+        <div class="track-glow"></div>
+      </div>
+      <div class="track-card" style="--track-color:#ef4444;">
+        <div class="track-number">05</div>
+        <div class="track-icon">&#9881;</div>
+        <h3>AI for Industry, Business &amp; Productivity</h3>
+        <p>Automate workflows, boost productivity, and transform industry with intelligent AI.</p>
+        <div class="track-glow"></div>
+      </div>
+      <div class="track-card featured-track" style="--track-color:#8b5cf6;">
+        <div class="track-number">06</div>
+        <div class="track-icon">&#128640;</div>
+        <h3>Open Innovation: Build the Next AI Startup</h3>
+        <p>No constraints. No limits. Build any AI-powered product with real startup potential.</p>
+        <div class="track-badge">Open Track</div>
+        <div class="track-glow"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="schedule-section" id="schedule">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-tag">Event Timeline</div>
+      <h2 class="section-title">From <span class="gradient-text">Idea to Impact</span></h2>
+    </div>
+    <div class="timeline">
+      <div class="phase-card phase-complete">
+        <div class="phase-connector">
+          <div class="phase-dot complete"></div>
+          <div class="phase-line"></div>
+        </div>
+        <div class="phase-content">
+          <div class="phase-header">
+            <div class="phase-num">Phase 01</div>
+            <div class="phase-status status-closed">Closed</div>
+          </div>
+          <h3 class="phase-title">Registration &amp; Team Formation</h3>
+          <div class="phase-dates"><span>Jul 3, 2026</span><span class="date-arrow">&#8594;</span><span>Jul 16, 2026, 11:59 PM IST</span></div>
+          <p class="phase-desc">Officially onboard participants, finalise team rosters, and gain access to event resources.</p>
+          <div class="phase-requirements">
+            <div class="req-item">&#9989; Complete official registration form</div>
+            <div class="req-item">&#9989; Submit required fee (&#8377;750/team)</div>
+            <div class="req-item">&#9989; Finalise teams of 2&#8211;3 members</div>
+          </div>
+          <div class="phase-duration"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>14 days</div>
+        </div>
+      </div>
+
+      <div class="phase-card phase-active">
+        <div class="phase-connector">
+          <div class="phase-dot pulse"></div>
+          <div class="phase-line"></div>
+        </div>
+        <div class="phase-content">
+          <div class="phase-header">
+            <div class="phase-num">Phase 02</div>
+            <div class="phase-status status-active">Active Now</div>
+          </div>
+          <h3 class="phase-title">Idea &amp; Proposal Submission</h3>
+          <div class="phase-dates"><span>Jul 17, 2026</span><span class="date-arrow">&#8594;</span><span>Jul 19, 2026, 11:59 PM IST</span></div>
+          <p class="phase-desc">Present an innovative AI-first solution addressing a real-world problem aligned with one of the hackathon themes.</p>
+          <div class="scoring-grid">
+            <div class="score-item"><div class="score-bar-wrap"><div class="score-bar" style="width:30%"></div></div><span>Innovation &amp; Creativity</span><strong>30%</strong></div>
+            <div class="score-item"><div class="score-bar-wrap"><div class="score-bar" style="width:20%"></div></div><span>Problem Relevance</span><strong>20%</strong></div>
+            <div class="score-item"><div class="score-bar-wrap"><div class="score-bar" style="width:20%"></div></div><span>AI-First Approach</span><strong>20%</strong></div>
+            <div class="score-item"><div class="score-bar-wrap"><div class="score-bar" style="width:15%"></div></div><span>Feasibility &amp; Scalability</span><strong>15%</strong></div>
+            <div class="score-item"><div class="score-bar-wrap"><div class="score-bar" style="width:15%"></div></div><span>Presentation</span><strong>15%</strong></div>
+          </div>
+          <div class="phase-duration"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>3 days</div>
+        </div>
+      </div>
+
+      <div class="phase-card">
+        <div class="phase-connector">
+          <div class="phase-dot"></div>
+          <div class="phase-line"></div>
+        </div>
+        <div class="phase-content">
+          <div class="phase-header">
+            <div class="phase-num">Phase 03</div>
+            <div class="phase-status status-upcoming">Upcoming</div>
+          </div>
+          <h3 class="phase-title">Prototype Development &amp; MVP Submission</h3>
+          <div class="phase-dates"><span>Jul 23, 2026</span><span class="date-arrow">&#8594;</span><span>Jul 26, 2026, 11:59 PM IST</span></div>
+          <p class="phase-desc">Shortlisted teams execute a time-boxed development sprint to build a Minimum Viable Product (MVP).</p>
+          <div class="deliverables">
+            <div class="deliverable-item"><div class="del-icon">&#128193;</div><div><strong>GitHub Repository</strong> &#8212; Well-documented public/shared code</div></div>
+            <div class="deliverable-item"><div class="del-icon">&#128196;</div><div><strong>Technical Docs</strong> &#8212; README with architecture &amp; setup</div></div>
+            <div class="deliverable-item"><div class="del-icon">&#127909;</div><div><strong>Demo Video</strong> &#8212; 3&#8211;5 min MVP walkthrough</div></div>
+          </div>
+          <div class="phase-duration"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>4 days</div>
+        </div>
+      </div>
+
+      <div class="phase-card phase-finale">
+        <div class="phase-connector">
+          <div class="phase-dot finale-dot"></div>
+        </div>
+        <div class="phase-content">
+          <div class="phase-header">
+            <div class="phase-num">Phase 04</div>
+            <div class="phase-status status-finale">Grand Finale</div>
+          </div>
+          <h3 class="phase-title">Grand Finale &amp; Live Jury Pitch</h3>
+          <div class="phase-dates"><span>Jul 30, 2026, 10:00 AM</span><span class="date-arrow">&#8594;</span><span>Jul 31, 2026, 10:00 PM IST</span></div>
+          <p class="phase-desc">Top finalist teams present completed prototypes live to an expert panel, defending technical choices and outlining future scalability.</p>
+          <div class="finale-format">
+            <div class="format-item"><span class="format-time">7 min</span><span>Live Demo &amp; Presentation</span></div>
+            <div class="format-separator">+</div>
+            <div class="format-item"><span class="format-time">3 min</span><span>Jury Q&amp;A Session</span></div>
+          </div>
+          <div class="phase-duration"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>2 days</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="prizes-section" id="prizes">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-tag">Rewards &amp; Recognition</div>
+      <h2 class="section-title">What You <span class="gradient-text">Win</span></h2>
+    </div>
+    <div class="prize-pool-banner">
+      <div class="prize-pool-content">
+        <div class="pool-label">Total Prize Pool</div>
+        <div class="pool-amount">&#8377;30,000</div>
+        <div class="pool-note">Distributed amongst the winners</div>
+      </div>
+      <div class="pool-decoration">
+        <div class="pool-ring ring-1"></div>
+        <div class="pool-ring ring-2"></div>
+        <div class="pool-ring ring-3"></div>
+        <span class="pool-trophy">&#127942;</span>
+      </div>
+    </div>
+    <div class="rewards-grid">
+      <div class="reward-card">
+        <div class="reward-icon">&#128176;</div>
+        <h3>Cash Prizes</h3>
+        <p>&#8377;30,000 prize pool distributed to winning teams based on final jury rankings.</p>
+      </div>
+      <div class="reward-card featured-reward">
+        <div class="reward-icon">&#129302;</div>
+        <h3>Free AI Credits</h3>
+        <p>Premium AI API credits to further build, iterate, and scale your product beyond the hackathon.</p>
+        <div class="reward-tag">All Finalists</div>
+      </div>
+      <div class="reward-card">
+        <div class="reward-icon">&#127891;</div>
+        <h3>Guided Mentorship</h3>
+        <p>1-on-1 mentorship from industry experts to help launch and scale your AI project to production.</p>
+      </div>
+      <div class="reward-card">
+        <div class="reward-icon">&#127873;</div>
+        <h3>Special Goodies</h3>
+        <p>Top 10 teams receive exclusive event merchandise and goodies from our partner brands.</p>
+        <div class="reward-tag">Top 10 Teams</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="why-section">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-tag">Why Join</div>
+      <h2 class="section-title">More Than Just a <span class="gradient-text">Hackathon</span></h2>
+    </div>
+    <div class="why-grid">
+      <div class="why-item">
+        <div class="why-icon">&#9889;</div>
+        <h4>Sharpen Technical Skills</h4>
+        <p>Get hands-on with cutting-edge AI tools, frameworks, and APIs used in real product development.</p>
+      </div>
+      <div class="why-item">
+        <div class="why-icon">&#127758;</div>
+        <h4>National-Level Exposure</h4>
+        <p>Compete alongside the brightest student minds from IITs, NITs, and top colleges across India.</p>
+      </div>
+      <div class="why-item">
+        <div class="why-icon">&#128188;</div>
+        <h4>Career Opportunities</h4>
+        <p>Showcase your project to recruiters, mentors, and industry leaders from the Techible network.</p>
+      </div>
+      <div class="why-item">
+        <div class="why-icon">&#127959;</div>
+        <h4>Real-World Portfolio</h4>
+        <p>Walk away with a live, deployed AI product that demonstrates your capabilities to future employers.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="registration-section" id="register">
+  <div class="container">
+    <div class="reg-card">
+      <div class="reg-content">
+        <div class="reg-badge">&#128197; Registration Closed</div>
+        <h2>Registration Ended July 16, 2026</h2>
+        <p>This hackathon's registration period has concluded. Stay tuned for future events on Techible.</p>
+        <div class="quick-details">
+          <div class="detail-row"><span class="detail-label">Duration</span><span class="detail-value">Jul 15 &#8211; Jul 30, 2026</span></div>
+          <div class="detail-row"><span class="detail-label">Registration</span><span class="detail-value">Jul 2 &#8211; Jul 16, 2026</span></div>
+          <div class="detail-row"><span class="detail-label">Format</span><span class="detail-value">Online &#183; Unlimited</span></div>
+          <div class="detail-row"><span class="detail-label">Team Price</span><span class="detail-value">&#8377;750 (&#8776; &#8377;250&#8211;375/member)</span></div>
+          <div class="detail-row"><span class="detail-label">Contact</span><span class="detail-value"><a href="mailto:summerschool@iitjammu.ac.in">summerschool@iitjammu.ac.in</a></span></div>
+        </div>
+        <div class="reg-notice">
+          <strong>Important:</strong> All registration fees are final and strictly non-refundable under any circumstances.
+        </div>
+        <a href="https://techible.io" class="btn-primary large">Explore More Events on Techible &#8594;</a>
+      </div>
+      <div class="reg-decoration">
+        <div class="reg-orb"></div>
+        <div class="floating-chips">
+          <div class="f-chip">&#129504; GenAI</div>
+          <div class="f-chip">&#129302; LLMs</div>
+          <div class="f-chip">&#128065; Vision</div>
+          <div class="f-chip">&#9889; Agents</div>
+          <div class="f-chip">&#127758; Multimodal</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="footer-container">
+    <div class="footer-brand">
+      <div class="footer-logo"><span class="logo-mark">&#9889;</span><span>Techible</span></div>
+      <p>Made with <span class="heart">&#9829;</span> for the world</p>
+      <a href="mailto:info@techible.io">info@techible.io</a>
+    </div>
+    <div class="footer-links">
+      <div class="footer-col">
+        <h4>Business</h4>
+        <a href="#">For Businesses</a>
+        <a href="#">For Companies/Recruiters</a>
+        <a href="#">For Colleges</a>
+      </div>
+      <div class="footer-col">
+        <h4>About</h4>
+        <a href="#">About Us</a>
+        <a href="#">Privacy &amp; Policy</a>
+        <a href="#">Terms &amp; Conditions</a>
+        <a href="#">Cancellation &amp; Refund</a>
+      </div>
+      <div class="footer-col">
+        <h4>Apply</h4>
+        <a href="#">Skill Based Internships</a>
+        <a href="#">Project Based Internships</a>
+        <a href="#">Mentorships</a>
+      </div>
+      <div class="footer-col">
+        <h4>Support</h4>
+        <a href="#">Contact &amp; Support</a>
+        <a href="#">Shipping Policy</a>
+        <a href="#">Track Your Queries</a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>&#169; 2026 Techible Smart Learn Private Limited. All rights reserved.</p>
+    <div class="footer-socials">
+      <a href="#">Explore</a>
+      <a href="#">Community</a>
+      <a href="#">Events</a>
+    </div>
+  </div>
+</footer>
+<script src="script.js"></script>
+</body>
+</html>

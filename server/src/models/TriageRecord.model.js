@@ -34,6 +34,9 @@ const triageRecordSchema = new mongoose.Schema({
       _id         : false,
     }],
     modelVersion: String,
+    severity: { type: String, enum: ['LOW','MEDIUM','HIGH','CRITICAL'], default: 'LOW' },
+    recommendation: String,
+    recommendationDetails: String,
   },
   ruleBasedFlags : [String],  // Hard-coded emergency keyword matches
   appointmentId  : { type: mongoose.Schema.Types.ObjectId, ref: 'Appointment' },

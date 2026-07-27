@@ -351,7 +351,7 @@ export function updateVitalsDisplay(vitals) {
 }
 
 /**
- * Simulate live vitals for exhibition demo (when no real IoT device is connected).
+ * Simulate live vitals (when no real IoT device is connected).
  * Generates realistic variations around healthy baseline values.
  */
 export function startVitalSimulation() {
@@ -376,7 +376,7 @@ export function startVitalSimulation() {
       bp_trend:   'stable',
     };
 
-    // Simulate a mildly elevated anomaly score at tick 30 for exhibition
+    // Simulate a mildly elevated anomaly score at tick 30 (demonstrates anomaly detection)
     if (tick === 30) {
       vitals.spo2_pct = 92.4;
       vitals.heart_rate_bpm = 97;

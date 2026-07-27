@@ -17,9 +17,15 @@ const schemas         = require('../utils/validators');
 const {
   createPrescription, getPrescription,
   listPatientPrescriptions, updatePrescriptionStatus,
+  listAllPrescriptions,
 } = require('../controllers/prescription.controller');
 
 router.use(verifyToken);
+
+router.get ('/',
+  authorize('doctor', 'pharmacist', 'admin', 'worker'),
+  listAllPrescriptions
+);
 
 router.post ('/',
   authorize('doctor'),

@@ -1,0 +1,11 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'node-server'
+    static_configs:
+      - targets: ['node-server:5000']
+
+  - job_name: 'ml-engine'
+    static_configs:
+      - targets: ['ml-engine:8000']

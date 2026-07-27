@@ -21,9 +21,10 @@ const connectDB = async () => {
 
   try {
     const conn = await mongoose.connect(uri, {
-      // Mongoose 8.x uses these defaults; listed for explicitness
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
+      maxPoolSize: 100, // Handle high concurrency (up to 100 parallel connections per worker)
+      minPoolSize: 10,  // Keep 10 connections warm for lower latency
     });
 
     logger.info(`MongoDB Connected: ${conn.connection.host}`);

@@ -1,0 +1,84 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  docker-compose.prod.yml — Production overrides
+# ─────────────────────────────────────────────────────────────────────────────
+#  Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# ─────────────────────────────────────────────────────────────────────────────
+
+version: '3.8'
+
+services:
+  node-server:
+    environment:
+      NODE_ENV: production
+      LOG_LEVEL: info
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 256M
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  ml-engine:
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '2.0'
+        reservations:
+          memory: 512M
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  kafka:
+    environment:
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+    restart: always
+
+  mongodb:
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+    restart: always
+    # No port exposure in production — internal container network only
+    ports: []
+
+  identity-service:
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    restart: always
+
+  triage-service:
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    restart: always
+
+  pharmacy-service:
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    restart: always
+
+  caddy:
+    restart: always
+

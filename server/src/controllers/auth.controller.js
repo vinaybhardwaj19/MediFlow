@@ -19,17 +19,22 @@ const signRefresh = (payload) =>
 
 /** POST /api/v1/auth/register */
 exports.register = async (req, res) => {
-  const { firstName, lastName, email, password, role } = req.body;
+  const { firstName, lastName, email, password, role, ...extra } = req.body;
   if (!firstName || !lastName || !email || !password)
     throw ApiError.badRequest('firstName, lastName, email and password are required');
 
   const exists = await User.findOne({ email });
   if (exists) throw ApiError.conflict('An account with this email already exists');
 
+  // Automatic verification for all roles during exhibition mode to allow instant access
+  const isVerified = true;
+
   const user = await User.create({
     firstName, lastName, email,
     passwordHash: password, // pre-save hook bcrypts this
     role: role || 'patient',
+    isVerified,
+    onboardingData: extra // Store licenseNumber, vehicleNumber, etc.
   });
 
   return ApiResponse.created(res, user.toSafeObject(), 'Account created successfully');
@@ -120,3 +125,24 @@ exports.getMe = async (req, res) => {
   if (!user) throw ApiError.notFound('User not found');
   return ApiResponse.ok(res, user.toSafeObject());
 };
+
+/** PUT /api/v1/auth/me */
+exports.updateMe = async (req, res) => {
+  const { firstName, lastName, phone, address, gender, dateOfBirth, onboardingData } = req.body;
+  const user = await User.findById(req.user.id);
+  if (!user) throw ApiError.notFound('User not found');
+
+  if (firstName !== undefined) user.firstName = firstName;
+  if (lastName !== undefined) user.lastName = lastName;
+  if (phone !== undefined) user.phone = phone;
+  if (address !== undefined) user.address = address;
+  if (gender !== undefined) user.gender = gender;
+  if (dateOfBirth !== undefined) user.dateOfBirth = dateOfBirth;
+  if (onboardingData !== undefined) {
+    user.onboardingData = { ...(user.onboardingData || {}), ...onboardingData };
+  }
+
+  await user.save();
+  return ApiResponse.ok(res, user.toSafeObject(), 'Profile updated successfully');
+};
+

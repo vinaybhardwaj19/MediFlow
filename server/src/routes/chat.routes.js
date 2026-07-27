@@ -12,9 +12,13 @@ const chatCtrl = require('../controllers/chat.controller');
 
 const router = Router();
 
-router.use(verifyToken); // All chat routes require authentication
+// MediBot — open AI chat (no auth required for demo accessibility)
+router.post('/medibot', chatCtrl.medibotChat);
 
+// Authenticated consultation chat routes
+router.use(verifyToken);
 router.get('/:roomId', chatCtrl.getChatHistory);
 router.post('/:roomId/read', chatCtrl.markAsRead);
 
 module.exports = router;
+

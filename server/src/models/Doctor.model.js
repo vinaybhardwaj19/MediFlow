@@ -6,6 +6,31 @@
  */
 
 const mongoose = require('mongoose');
+const { encrypt, decrypt } = require('../services/encryption.service');
+
+function isEncrypted(val) {
+  if (typeof val !== 'string') return false;
+  const parts = val.split(':');
+  return parts.length === 3 && parts.every(part => /^[0-9a-fA-F]+$/.test(part));
+}
+
+function safeEncrypt(val) {
+  if (!val || typeof val !== 'string' || isEncrypted(val)) return val;
+  try {
+    return encrypt(val);
+  } catch (err) {
+    return val;
+  }
+}
+
+function safeDecrypt(val) {
+  if (!val || typeof val !== 'string' || !isEncrypted(val)) return val;
+  try {
+    return decrypt(val);
+  } catch (err) {
+    return val;
+  }
+}
 
 const slotSchema = new mongoose.Schema({
   dayOfWeek    : { type: Number, min: 0, max: 6, required: true }, // 0=Sun
@@ -44,5 +69,31 @@ doctorSchema.index({ specializations: 'text', subSpecialties: 'text' });
 doctorSchema.index({ 'ratings.average': -1 });
 doctorSchema.index({ isAcceptingPatients: 1 });
 
+// ─── PHI Encryption & Decryption Hooks ──────────────────────────────────────────
+doctorSchema.pre('save', function (next) {
+  if (this.licenseNumber) this.licenseNumber = safeEncrypt(this.licenseNumber);
+  next();
+});
+
+function decryptDoctor(doc) {
+  if (!doc) return;
+  if (doc.licenseNumber) doc.licenseNumber = safeDecrypt(doc.licenseNumber);
+}
+
+doctorSchema.post('findOne', function (doc) {
+  decryptDoctor(doc);
+});
+
+doctorSchema.post('find', function (docs) {
+  if (Array.isArray(docs)) {
+    docs.forEach(decryptDoctor);
+  }
+});
+
+doctorSchema.post('save', function (doc) {
+  decryptDoctor(doc);
+});
+
 const Doctor = mongoose.model('Doctor', doctorSchema);
 module.exports = Doctor;
+

@@ -6,3 +6,4 @@ asyncpg==0.29.0
 httpx==0.27.0
 numpy==1.26.4
 python-dotenv==1.0.1
+aiokafka==0.11.0    # Async Apache Kafka Client

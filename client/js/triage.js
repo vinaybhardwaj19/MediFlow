@@ -31,9 +31,9 @@ let _triageInit = false;
 
 // ── Urgency colour map ────────────────────────────────────────────────────────
 const URGENCY_CONFIG = {
-  emergency: { badge: 'badge-emergency', color: '#ef4444', icon: '🚨' },
-  urgent:    { badge: 'badge-urgent',    color: '#f97316', icon: '⚠️' },
-  routine:   { badge: 'badge-routine',   color: '#22c55e', icon: '✅' },
+  emergency: { badge: 'badge-emergency', color: '#ef4444', icon: '🚨', image: 'https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=120&q=80' },
+  urgent:    { badge: 'badge-urgent',    color: '#f97316', icon: '⚠️', image: 'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=120&q=80' },
+  routine:   { badge: 'badge-routine',   color: '#22c55e', icon: '✅', image: 'https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&w=120&q=80' },
 };
 
 // ── MEWS level colour ─────────────────────────────────────────────────────────
@@ -165,6 +165,38 @@ export function initTriage() {
     document.getElementById('result-badge').innerHTML =
       `<span class="badge ${uc.badge}">${uc.icon} ${ml.urgencyLevel.toUpperCase()}</span>`;
 
+    // ── Plain-Language Layman Summary (Low-Literacy & Accessibility Support) ─────
+    const laymanEl = document.getElementById('result-layman-summary') || createLaymanSummaryEl();
+    const laymanText = getLaymanText(ml);
+    laymanEl.innerHTML = `
+      <div class="layman-card" style="background:${uc.color}15; border: 2px solid ${uc.color}; border-radius: 12px; padding: 16px; margin: 16px 0;">
+        <div style="display:flex; align-items:center; justify-between; margin-bottom: 8px;">
+          <h3 style="margin:0; font-size:1.15rem; color:${uc.color}; display:flex; align-items:center; gap:10px;">
+            <img src="${uc.image}" alt="Status" style="width:32px; height:32px; border-radius:8px; object-fit:cover; border:1px solid ${uc.color}40;" />
+            <span>${uc.icon} Plain-Language Summary / सरल भाषा संदेश</span>
+          </h3>
+          <button id="tts-listen-btn" class="btn btn-sm btn-outline" style="border-color:${uc.color}; color:${uc.color};">
+            🔊 Listen Aloud / सुनें
+          </button>
+        </div>
+        <p style="font-size:1.05rem; line-height:1.5; margin:0 0 10px 0; color:var(--text-main);">
+          ${laymanText.en}
+        </p>
+        <p style="font-size:0.98rem; line-height:1.4; margin:0; color:var(--text-muted);">
+          🇮🇳 <strong>हिन्दी:</strong> ${laymanText.hi}
+        </p>
+      </div>
+    `;
+
+    setTimeout(() => {
+      document.getElementById('tts-listen-btn')?.addEventListener('click', () => {
+        if (window.voiceAssistant) {
+          const speakContent = `${laymanText.en}. हिन्दी में: ${laymanText.hi}`;
+          import('./voice-nav.js').then(m => m.speakText(speakContent, 'hi-IN'));
+        }
+      });
+    }, 50);
+
     // ── Differentials ──────────────────────────────────────────────────────────
     const diffsEl = document.getElementById('result-differentials');
     if (ml.differentials?.length > 1) {
@@ -270,16 +302,36 @@ export function initTriage() {
       emergencyBanner.classList.remove('hidden');
     } else emergencyBanner.classList.add('hidden');
 
+    // ── Save Triage Assessment to Global State & Dispatch Event ─────────────
+    const activeTriageRecord = {
+      timestamp: new Date().toISOString(),
+      symptoms: [...selectedSymptoms],
+      urgencyLevel: ml.urgencyLevel,
+      recommendedSpecialty: ml.recommendedSpecialty,
+      confidence: ml.confidence,
+      differentials: ml.differentials || [],
+      clinicalScores: ml.clinicalScores || {},
+      explanation: ml.explanation || {},
+      laymanSummary: laymanText.en,
+    };
+    setState('activeTriage', activeTriageRecord);
+    localStorage.setItem('mf-active-triage', JSON.stringify(activeTriageRecord));
+    window.dispatchEvent(new CustomEvent('mf:triage-completed', { detail: activeTriageRecord }));
+
     result.classList.remove('hidden');
     result.scrollIntoView({ behavior: 'smooth', block: 'start' });
     toastSuccess('Analysis complete', `${ml.recommendedSpecialty} — ${ml.urgencyLevel}`);
   }
 
-  // Book from triage result
+  // Book/Route to Doctor from triage result
   document.getElementById('book-from-triage')?.addEventListener('click', () => {
-    navigate('dashboard');
+    const activeTriage = getState('activeTriage') || JSON.parse(localStorage.getItem('mf-active-triage'));
+    if (activeTriage) {
+      toastInfo('Clinical Handoff', `Transferring ${activeTriage.recommendedSpecialty} triage data to Doctor Review Queue...`);
+    }
+    navigate('consultation');
     setTimeout(() => {
-      document.getElementById('dash-booking')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document.getElementById('doctor-tools-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 400);
   });
 
@@ -290,4 +342,75 @@ export function initTriage() {
     result.classList.add('hidden');
     document.getElementById('symptom-input').value = '';
   });
+
+  // Voice Input Integration
+  const voiceBtn = document.getElementById('voice-symptom-btn');
+  if (voiceBtn) {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SR) {
+      const recognition = new SR();
+      recognition.continuous = false;
+      recognition.lang = 'en-US';
+
+      voiceBtn.addEventListener('click', () => {
+        recognition.start();
+        voiceBtn.textContent = '🔵'; // Recording state
+        toastInfo('Microphone Active', 'Speak your symptoms clearly...');
+      });
+
+      recognition.onresult = (e) => {
+        const text = e.results[0][0].transcript.toLowerCase();
+        voiceBtn.textContent = '🎤';
+        const input = document.getElementById('symptom-input');
+        if (input) {
+          input.value = text;
+          input.dispatchEvent(new Event('input'));
+          // Simulate Enter to add chip
+          setTimeout(() => {
+            input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+          }, 300);
+          toastSuccess('Voice Captured', `Parsed: "${text}"`);
+        }
+      };
+
+      recognition.onerror = () => {
+        voiceBtn.textContent = '🎤';
+        toastError('Voice Error', 'Could not access microphone.');
+      };
+    } else {
+      voiceBtn.style.display = 'none';
+    }
+  }
 }
+
+function createLaymanSummaryEl() {
+  const container = document.createElement('div');
+  container.id = 'result-layman-summary';
+  const parent = document.getElementById('triage-result');
+  const target = document.getElementById('result-differentials') || parent?.firstChild;
+  if (parent && target) {
+    parent.insertBefore(container, target);
+  }
+  return container;
+}
+
+function getLaymanText(ml) {
+  const spec = ml.recommendedSpecialty || 'General Doctor';
+  if (ml.urgencyLevel === 'emergency') {
+    return {
+      en: `🚨 CRITICAL ALERT: Your symptoms suggest high risk requiring immediate care from a ${spec}. Please visit the nearest hospital or click the emergency SOS button.`,
+      hi: `🚨 अति गंभीर चेतावनी: आपके लक्षण तुरंत ${spec} (विशेषज्ञ डॉक्टर) को दिखाने की आवश्यकता संकेत करते हैं। कृपया तुरंत नजदीकी अस्पताल जाएं या नीचे दिए गए SOS बटन को दबाएं।`
+    };
+  } else if (ml.urgencyLevel === 'urgent') {
+    return {
+      en: `⚠️ DOCTOR CONSULTATION RECOMMENDED: You should consult a ${spec} today for further evaluation and treatment.`,
+      hi: `⚠️ डॉक्टर सलाह आवश्यक: आपको आज ही किसी ${spec} (डॉक्टर) से परामर्श लेना चाहिए।`
+    };
+  } else {
+    return {
+      en: `🟢 LOW RISK: Your symptoms appear mild. Rest, stay hydrated, and book an online consultation with a ${spec} if symptoms persist.`,
+      hi: `🟢 सामान्य देखभाल: आपके लक्षण सामान्य प्रतीत होते हैं। आराम करें, पानी पीएं, और यदि लक्षण बने रहें तो ${spec} से परामर्श लें।`
+    };
+  }
+}
+

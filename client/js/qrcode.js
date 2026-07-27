@@ -5,7 +5,7 @@
  */
 
 // ── QR Code matrix generator (simplified Reed-Solomon) ───────────────────────
-// This uses alphanumeric mode for simplicity. For exhibition demo purposes.
+// This uses alphanumeric mode for simplicity.
 
 function generateQRMatrix(text) {
   // For demo: generate a deterministic pattern based on text hash

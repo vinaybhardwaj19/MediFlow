@@ -132,7 +132,7 @@ app = FastAPI(
 )
 
 app.add_middleware(CORSMiddleware,
-    allow_origins=[os.getenv("CORS_ALLOWED_ORIGIN", "http://localhost:3000")],
+    allow_origins=[os.getenv("CORS_ALLOWED_ORIGIN", "http://localhost:5050"), "http://localhost:3000"],
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type", "Authorization", "X-MediFlow-Request-ID"],
 )

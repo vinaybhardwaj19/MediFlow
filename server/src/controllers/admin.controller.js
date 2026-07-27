@@ -36,6 +36,14 @@ exports.toggleUserStatus = async (req, res) => {
   return ApiResponse.ok(res, { id: user._id, isActive: user.isActive }, 'User status updated');
 };
 
+exports.verifyUser = async (req, res) => {
+  const user = await User.findById(req.params.id);
+  if (!user) throw ApiError.notFound('User not found');
+  user.isVerified = true;
+  await user.save();
+  return ApiResponse.ok(res, { id: user._id, isVerified: user.isVerified }, 'User verified successfully');
+};
+
 exports.getAuditLogs = async (req, res) => {
   const { page = 1, limit = 50 } = req.query;
   const [logs, total] = await Promise.all([

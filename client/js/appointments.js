@@ -6,14 +6,14 @@ import { getState } from './store.js';
 import { toastSuccess, toastError, toastInfo } from './toast.js';
 
 const SPECIALTIES = [
-  { id:'general', label:'General Physician', icon:'🩺', color:'#6366f1' },
-  { id:'cardiology', label:'Cardiologist', icon:'❤️', color:'#ef4444' },
-  { id:'neurology', label:'Neurologist', icon:'🧠', color:'#8b5cf6' },
-  { id:'pulmonology', label:'Pulmonologist', icon:'🫁', color:'#3b82f6' },
-  { id:'endocrinology', label:'Endocrinologist', icon:'🔬', color:'#10b981' },
-  { id:'dermatology', label:'Dermatologist', icon:'🌿', color:'#f59e0b' },
-  { id:'orthopedics', label:'Orthopedist', icon:'🦴', color:'#ec4899' },
-  { id:'ophthalmology', label:'Ophthalmologist', icon:'👁️', color:'#14b8a6' },
+  { id:'general', label:'General Physician', icon:'🩺', image:'https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&w=200&q=80', color:'#6366f1' },
+  { id:'cardiology', label:'Cardiologist', icon:'❤️', image:'https://images.unsplash.com/photo-1628348068343-c6a848d2b6dd?auto=format&fit=crop&w=200&q=80', color:'#ef4444' },
+  { id:'neurology', label:'Neurologist', icon:'🧠', image:'https://images.unsplash.com/photo-1559757175-5700dde675bc?auto=format&fit=crop&w=200&q=80', color:'#8b5cf6' },
+  { id:'pulmonology', label:'Pulmonologist', icon:'🫁', image:'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=200&q=80', color:'#3b82f6' },
+  { id:'endocrinology', label:'Endocrinologist', icon:'🔬', image:'https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=200&q=80', color:'#10b981' },
+  { id:'dermatology', label:'Dermatologist', icon:'🌿', image:'https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?auto=format&fit=crop&w=200&q=80', color:'#f59e0b' },
+  { id:'orthopedics', label:'Orthopedist', icon:'🦴', image:'https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?auto=format&fit=crop&w=200&q=80', color:'#ec4899' },
+  { id:'ophthalmology', label:'Ophthalmologist', icon:'👁️', image:'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=200&q=80', color:'#14b8a6' },
 ];
 
 const TIME_SLOTS = [
@@ -52,11 +52,22 @@ function renderBookingWidget(container) {
 
 let _selectedSpecialty = null, _selectedDate = null, _selectedTime = null;
 
+const DEMO_DOCTORS = [
+  { id: 'doc1', name: 'Dr. Sarah Jenkins', specialty: 'cardiology', degrees: 'MD, DM (Cardiology)', exp: '12 Yrs Exp', rating: '4.9', reviews: 184, fee: 800, pincode: '560038', hospital: 'Apollo Heart Institute', image: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=200&q=80' },
+  { id: 'doc2', name: 'Dr. Vikram Nair', specialty: 'neurology', degrees: 'MD, DNB (Neurology)', exp: '15 Yrs Exp', rating: '4.8', reviews: 210, fee: 950, pincode: '560001', hospital: 'Manipal Neuro Center', image: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=200&q=80' },
+  { id: 'doc3', name: 'Dr. Priya Sharma', specialty: 'general', degrees: 'MBBS, MD (General Medicine)', exp: '9 Yrs Exp', rating: '4.9', reviews: 156, fee: 600, pincode: '560038', hospital: 'Fortis Wellness Hub', image: 'https://images.unsplash.com/photo-1594824813566-88855ce78907?auto=format&fit=crop&w=200&q=80' },
+  { id: 'doc4', name: 'Dr. Robert Chen', specialty: 'pulmonology', degrees: 'MD (Pulmonology), FCCP', exp: '14 Yrs Exp', rating: '4.7', reviews: 128, fee: 850, pincode: '560012', hospital: 'Max Respiratory Care', image: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&w=200&q=80' },
+  { id: 'doc5', name: 'Dr. Ananya Reddy', specialty: 'dermatology', degrees: 'MD (Dermatology)', exp: '8 Yrs Exp', rating: '4.9', reviews: 310, fee: 750, pincode: '560038', hospital: 'Skin & Aesthetic Clinic', image: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=200&q=80' },
+  { id: 'doc6', name: 'Dr. Rajesh Kumar', specialty: 'cardiology', degrees: 'MD, FACC', exp: '11 Yrs Exp', rating: '4.8', reviews: 94, fee: 750, pincode: '560038', hospital: 'Narayana Health', image: 'https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&w=200&q=80' },
+];
+
+let _selectedDoctor = null;
+
 function showSpecialtySelection(container) {
   setStep(1);
   const panel = container.querySelector('#booking-panel');
   panel.innerHTML = `
-    <h3 style="margin-bottom:16px;font-weight:700;">Select Specialty</h3>
+    <h3 style="margin-bottom:16px;font-weight:700;">Step 1: Choose Specialty</h3>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;">
       ${SPECIALTIES.map(s => `
         <button class="specialty-card" data-specialty="${s.id}" style="
@@ -64,8 +75,11 @@ function showSpecialtySelection(container) {
           padding:18px 14px; cursor:pointer; text-align:left; transition:all .2s;
           display:flex; flex-direction:column; gap:8px;
         ">
-          <div style="font-size:2rem;">${s.icon}</div>
-          <div style="font-weight:600;font-size:.9rem;">${s.label}</div>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <img src="${s.image}" alt="${s.label}" style="width:42px; height:42px; border-radius:10px; object-fit:cover; border:1px solid ${s.color}40;" />
+            <span style="font-size:1.4rem;">${s.icon}</span>
+          </div>
+          <div style="font-weight:600;font-size:.9rem;margin-top:4px;">${s.label}</div>
           <div style="width:40px;height:3px;border-radius:2px;background:${s.color};"></div>
         </button>
       `).join('')}
@@ -77,6 +91,57 @@ function showSpecialtySelection(container) {
     card.addEventListener('mouseleave', () => { card.style.border='1px solid var(--border)';card.style.transform=''; });
     card.addEventListener('click', () => {
       _selectedSpecialty = card.dataset.specialty;
+      showDoctorCatalogSelection(container);
+    });
+  });
+}
+
+function showDoctorCatalogSelection(container) {
+  setStep(1);
+  const panel = container.querySelector('#booking-panel');
+  const spec = SPECIALTIES.find(s => s.id === _selectedSpecialty);
+  const filteredDocs = DEMO_DOCTORS.filter(d => d.specialty === _selectedSpecialty || _selectedSpecialty === 'general');
+  const docsToDisplay = filteredDocs.length ? filteredDocs : DEMO_DOCTORS;
+
+  panel.innerHTML = `
+    <button class="btn btn-outline btn-sm" id="back-to-specialties" style="margin-bottom:20px;">← Back to Specialties</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+      <div>
+        <h3 style="margin:0;font-weight:700;">Select Preferred Doctor (${spec?.label || 'All Specialists'})</h3>
+        <p style="font-size:0.8rem;color:var(--text-secondary);margin-top:2px;">Showing verified doctors active in your city/pincode.</p>
+      </div>
+      <div class="badge badge-routine" style="font-size:0.75rem;">📍 Pincode Auto-Matched</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;">
+      ${docsToDisplay.map(d => `
+        <div class="card fade-up" style="padding:18px;border:1px solid var(--border);border-left:4px solid var(--primary);display:flex;flex-direction:column;justify-space-between;">
+          <div style="display:flex;gap:14px;align-items:flex-start;margin-bottom:12px;">
+            <img src="${d.image}" style="width:54px;height:54px;border-radius:12px;object-fit:cover;border:2px solid var(--primary);">
+            <div style="flex:1;">
+              <div style="font-weight:700;font-size:1rem;color:var(--primary);">${d.name}</div>
+              <div style="font-size:0.75rem;color:var(--text-secondary);">${d.degrees} &middot; ${d.exp}</div>
+              <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:2px;">🏥 ${d.hospital}</div>
+              <div style="font-size:0.72rem;color:var(--text-muted);margin-top:2px;">📍 Serving PIN: <b>${d.pincode}</b></div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:1px solid var(--border);margin-top:auto;">
+            <div>
+              <span style="color:#eab308;font-weight:700;font-size:0.85rem;">⭐ ${d.rating}</span>
+              <span style="font-size:0.7rem;color:var(--text-secondary);"> (${d.reviews} reviews)</span>
+              <div style="font-weight:700;font-size:0.9rem;color:var(--success);margin-top:2px;">₹${d.fee} / consult</div>
+            </div>
+            <button class="btn btn-primary btn-sm btn-select-doc" data-id="${d.id}" style="padding:6px 14px;font-weight:700;">Select Doctor →</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  panel.querySelector('#back-to-specialties')?.addEventListener('click', () => showSpecialtySelection(container));
+  panel.querySelectorAll('.btn-select-doc').forEach(btn => {
+    btn.addEventListener('click', () => {
+      _selectedDoctor = DEMO_DOCTORS.find(d => d.id === btn.dataset.id) || DEMO_DOCTORS[0];
       showDateTimeSelection(container);
     });
   });
@@ -153,6 +218,7 @@ function showConfirmation(container) {
   setStep(3);
   const panel = container.querySelector('#booking-panel');
   const spec = SPECIALTIES.find(s=>s.id===_selectedSpecialty);
+  const doc = _selectedDoctor || DEMO_DOCTORS[0];
   const dateStr = _selectedDate?.toLocaleDateString('en',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
 
   panel.innerHTML = `
@@ -161,20 +227,27 @@ function showConfirmation(container) {
       <h3 style="font-weight:700;margin-bottom:20px;">Appointment Summary</h3>
       <div style="display:flex;flex-direction:column;gap:14px;">
         <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:14px;border-bottom:1px solid var(--border);">
+          <div style="color:var(--text-secondary);font-size:.9rem;">Selected Doctor</div>
+          <div style="font-weight:700;display:flex;align-items:center;gap:10px;color:var(--primary);">
+            <img src="${doc.image}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;">
+            ${doc.name} (${doc.degrees})
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:14px;border-bottom:1px solid var(--border);">
+          <div style="color:var(--text-secondary);font-size:.9rem;">Hospital / Pincode</div>
+          <div style="font-weight:700;">${doc.hospital} &middot; <b>PIN: ${doc.pincode}</b></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:14px;border-bottom:1px solid var(--border);">
           <div style="color:var(--text-secondary);font-size:.9rem;">Specialty</div>
           <div style="font-weight:700;display:flex;align-items:center;gap:8px;">${spec?.icon} ${spec?.label}</div>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:14px;border-bottom:1px solid var(--border);">
-          <div style="color:var(--text-secondary);font-size:.9rem;">Date</div>
-          <div style="font-weight:700;">${dateStr}</div>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:14px;border-bottom:1px solid var(--border);">
-          <div style="color:var(--text-secondary);font-size:.9rem;">Time</div>
-          <div style="font-weight:700;">${_selectedTime}</div>
+          <div style="color:var(--text-secondary);font-size:.9rem;">Date & Time</div>
+          <div style="font-weight:700;">${dateStr} at ${_selectedTime}</div>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;">
-          <div style="color:var(--text-secondary);font-size:.9rem;">Type</div>
-          <div style="font-weight:700;">📹 Video Consultation</div>
+          <div style="color:var(--text-secondary);font-size:.9rem;">Consultation Fee</div>
+          <div style="font-weight:800;color:var(--success);font-size:1.1rem;">₹${doc.fee}</div>
         </div>
       </div>
     </div>

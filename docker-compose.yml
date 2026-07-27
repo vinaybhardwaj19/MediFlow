@@ -1,0 +1,215 @@
+version: '3.8'
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  MediFlow Enterprise — Docker Compose (Base Configuration)
+# ─────────────────────────────────────────────────────────────────────────────
+#  Usage:
+#    Development:  docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+#    Production:   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  # ── Reverse Proxy + Auto-TLS ──────────────────────────────────────────────
+  caddy:
+    image: caddy:2-alpine
+    container_name: mediflow-caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./client:/srv/client:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      node-server:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── Database ──────────────────────────────────────────────────────────────
+  mongodb:
+    image: mongo:7
+    container_name: mediflow-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-mediflow_admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-mediflow_secure_pass_2026}
+    volumes:
+      - mongo_data:/data/db
+    # Port NOT exposed to host — internal Docker network only (security)
+    # Use docker-compose.dev.yml override to expose for local development
+    expose:
+      - "27017"
+    healthcheck:
+      test: mongosh -u "$${MONGO_INITDB_ROOT_USERNAME}" -p "$${MONGO_INITDB_ROOT_PASSWORD}" --eval "db.adminCommand('ping')" --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # ── Event Streaming ───────────────────────────────────────────────────────
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: mediflow-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    restart: unless-stopped
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: mediflow-kafka
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    restart: unless-stopped
+
+  # ── Node.js API Server ────────────────────────────────────────────────────
+  node-server:
+    build:
+      context: ./server
+    container_name: mediflow-node-server
+    env_file:
+      - ./server/.env
+      - ./config/services.env
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      MONGO_URI: mongodb://${MONGO_INITDB_ROOT_USERNAME:-mediflow_admin}:${MONGO_INITDB_ROOT_PASSWORD:-mediflow_secure_pass_2026}@mongodb:27017/mediflow?authSource=admin
+      KAFKA_BROKERS: "kafka:29092"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    healthcheck:
+      test: wget -qO- http://localhost:5000/health || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+
+  # ── ML Engine (FastAPI + SHAP + GNN) ──────────────────────────────────────
+  ml-engine:
+    build:
+      context: ./ml-engine
+    container_name: mediflow-ml-engine
+    env_file:
+      - ./config/services.env
+    environment:
+      ML_ALLOWED_ORIGIN: http://node-server:5000
+      KAFKA_BOOTSTRAP_SERVERS: "kafka:29092"
+    depends_on:
+      - kafka
+    healthcheck:
+      test: python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
+  # ── Identity Service (PQC Dilithium-3 / Kyber-768) ───────────────────────
+  identity-service:
+    build:
+      context: ./services/identity
+    container_name: mediflow-identity
+    env_file:
+      - ./config/services.env
+    depends_on:
+      - kafka
+    healthcheck:
+      test: python -c "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  # ── Triage Service (LSTM Anomaly + Ambient Agent) ─────────────────────────
+  triage-service:
+    build:
+      context: ./services/triage
+    container_name: mediflow-triage
+    env_file:
+      - ./config/services.env
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: "kafka:29092"
+    depends_on:
+      - kafka
+    healthcheck:
+      test: python -c "import urllib.request; urllib.request.urlopen('http://localhost:8002/health')"
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+
+  # ── Pharmacy Service (3D A* Drone Routing) ────────────────────────────────
+  pharmacy-service:
+    build:
+      context: ./services/pharmacy
+    container_name: mediflow-pharmacy
+    env_file:
+      - ./config/services.env
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: "kafka:29092"
+    depends_on:
+      - kafka
+    healthcheck:
+      test: python -c "import urllib.request; urllib.request.urlopen('http://localhost:8003/health')"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  # ── Prometheus ────────────────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: mediflow-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    depends_on:
+      - node-server
+    restart: unless-stopped
+
+  # ── Grafana ───────────────────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:latest
+    container_name: mediflow-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
+
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+volumes:
+  mongo_data:
+    name: mediflow-mongo-data
+  caddy_data:
+    name: mediflow-caddy-data
+  caddy_config:
+    name: mediflow-caddy-config
+  prometheus_data:
+    name: mediflow-prometheus-data
+  grafana_data:
+    name: mediflow-grafana-data

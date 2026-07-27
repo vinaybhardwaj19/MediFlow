@@ -9,54 +9,63 @@ const BODY_REGIONS = {
     symptoms: ['headache','severe headache','migraine','dizziness','blurred vision','light sensitivity','confusion','memory loss','facial drooping'],
     path: 'M 150,30 C 120,30 100,55 100,80 C 100,110 120,130 150,130 C 180,130 200,110 200,80 C 200,55 180,30 150,30 Z',
     color: '#f43f5e',
+    image: 'https://images.unsplash.com/photo-1559757175-5700dde675bc?auto=format&fit=crop&w=200&q=80',
   },
   neck: {
     label: 'Neck & Throat',
     symptoms: ['sore throat','stiff neck','neck pain','difficulty swallowing','swollen glands'],
     path: 'M 135,130 L 165,130 L 170,160 L 130,160 Z',
     color: '#fb923c',
+    image: 'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=200&q=80',
   },
   chest: {
     label: 'Chest & Heart',
     symptoms: ['chest pain','chest tightness','shortness of breath','palpitations','irregular heartbeat','coughing blood','difficulty breathing'],
     path: 'M 100,160 L 200,160 L 215,240 Q 200,260 150,260 Q 100,260 85,240 Z',
     color: '#ef4444',
+    image: 'https://images.unsplash.com/photo-1628348068343-c6a848d2b6dd?auto=format&fit=crop&w=200&q=80',
   },
   abdomen: {
     label: 'Abdomen & Stomach',
     symptoms: ['abdominal pain','nausea','vomiting','bloating','acid reflux','blood in stool','diarrhea','constipation'],
     path: 'M 95,260 Q 100,260 150,260 Q 200,260 205,260 L 200,340 Q 180,360 150,360 Q 120,360 100,340 Z',
     color: '#f59e0b',
+    image: 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=200&q=80',
   },
   leftArm: {
     label: 'Left Arm',
     symptoms: ['left arm pain','numbness','tingling','joint pain','swelling','weakness in limbs'],
     path: 'M 85,170 L 70,170 L 40,280 L 30,340 L 50,345 L 65,290 L 85,230 Z',
     color: '#0ea5e9',
+    image: 'https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?auto=format&fit=crop&w=200&q=80',
   },
   rightArm: {
     label: 'Right Arm',
     symptoms: ['arm weakness','shoulder pain','reduced range','joint pain','swelling','numbness'],
     path: 'M 215,170 L 230,170 L 260,280 L 270,340 L 250,345 L 235,290 L 215,230 Z',
     color: '#0ea5e9',
+    image: 'https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?auto=format&fit=crop&w=200&q=80',
   },
   legs: {
     label: 'Legs & Knees',
     symptoms: ['knee pain','leg numbness','back pain','hip pain','difficulty walking','ankle swelling','joint pain'],
     path: 'M 115,360 L 140,360 L 145,460 L 150,530 L 130,530 L 125,460 L 105,390 Z M 160,360 L 185,360 L 195,390 L 175,460 L 170,530 L 150,530 L 155,460 Z',
     color: '#8b5cf6',
+    image: 'https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?auto=format&fit=crop&w=200&q=80',
   },
   skin: {
     label: 'Skin (General)',
     symptoms: ['skin rash','itching','redness','hives','eczema','dry skin','acne','hair loss','mole changes'],
     path: null, // This is a button, not a body region
     color: '#10b981',
+    image: 'https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?auto=format&fit=crop&w=200&q=80',
   },
   mind: {
     label: 'Mental Health',
     symptoms: ['depression','anxiety','insomnia','panic attacks','mood swings','hopelessness','hallucinations'],
     path: null,
     color: '#a78bfa',
+    image: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=200&q=80',
   },
 };
 
@@ -149,6 +158,8 @@ export function initBodyMap(onSymptomsSelected) {
   container.appendChild(panel);
 }
 
+import { speakText } from './voice-nav.js';
+
 function selectRegion(key, region, path, svg, callback) {
   // Deselect previous
   svg.querySelectorAll('.bodymap-region').forEach(p => {
@@ -160,13 +171,15 @@ function selectRegion(key, region, path, svg, callback) {
   path.setAttribute('fill', region.color + '30');
   path.setAttribute('stroke', region.color);
 
+  speakText(`${region.label}. Select your symptoms.`, 'hi-IN');
   showSymptomPanel(key, region, callback);
 }
 
 function selectExtraRegion(key, region, callback) {
   selectedRegion = key;
   document.querySelectorAll('.bodymap-extra-btn').forEach(b => b.classList.remove('active'));
-  event.target.classList.add('active');
+  if (event && event.target) event.target.classList.add('active');
+  speakText(`${region.label}. Select your symptoms.`, 'hi-IN');
   showSymptomPanel(key, region, callback);
 }
 
@@ -177,6 +190,7 @@ function showSymptomPanel(key, region, callback) {
   panel.className = 'bodymap-symptom-panel';
   panel.innerHTML = `
     <div class="bm-panel-header" style="--c:${region.color}">
+      <img src="${region.image}" alt="${region.label}" style="width:28px; height:28px; border-radius:6px; object-fit:cover;" />
       <span class="bm-panel-dot" style="background:${region.color}"></span>
       <span>${region.label}</span>
     </div>

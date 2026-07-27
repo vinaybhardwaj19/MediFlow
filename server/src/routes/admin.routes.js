@@ -6,11 +6,13 @@ const {
   getDashboardStats, listUsers, toggleUserStatus, getAuditLogs,
 } = require('../controllers/admin.controller');
 
-router.use(verifyToken, authorize('admin'));
-
-router.get ('/dashboard',       getDashboardStats);
-router.get ('/users',           listUsers);
-router.patch('/users/:id/status', toggleUserStatus);
-router.get ('/audit-logs',      getAuditLogs);
+router.get ('/dashboard',       verifyToken, authorize('admin', 'worker'), getDashboardStats);
+router.get ('/users',           verifyToken, authorize('admin', 'worker'), listUsers);
+router.patch('/users/:id/status', verifyToken, authorize('admin'), toggleUserStatus);
+router.patch('/users/:id/verify', verifyToken, authorize('admin'), (req, res, next) => {
+  const { verifyUser } = require('../controllers/admin.controller');
+  verifyUser(req, res, next);
+});
+router.get ('/audit-logs',      verifyToken, authorize('admin', 'worker'), getAuditLogs);
 
 module.exports = router;

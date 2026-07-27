@@ -1,0 +1,59 @@
+# ── Dependencies ──────────────────────────────────────────────────────────────
+node_modules/
+.pnp.*
+.yarn/
+
+# ── Local Environment and Secrets ─────────────────────────────────────────────
+.env
+.env.local
+.env.staging
+.env.production
+!.env.example
+!config/environments/*.env
+
+# ── Runtime Output ────────────────────────────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+pids/
+*.pid
+
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+
+# ── Local Databases and Generated Data ────────────────────────────────────────
+data/
+*.sqlite
+*.db
+*.joblib
+*.pkl
+*.h5
+
+# ── Docker ────────────────────────────────────────────────────────────────────
+docker-compose.override.yml
+
+# ── OS/Editor Files ───────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── Build Output ──────────────────────────────────────────────────────────────
+client/dist/
+coverage/
+.nyc_output/
+
+# ── k6 Results ────────────────────────────────────────────────────────────────
+k6/results/

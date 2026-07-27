@@ -1,0 +1,55 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  docker-compose.dev.yml — Development overrides
+# ─────────────────────────────────────────────────────────────────────────────
+#  Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+# ─────────────────────────────────────────────────────────────────────────────
+
+version: '3.8'
+
+services:
+  # Expose MongoDB port for local tools (Compass, mongosh)
+  mongodb:
+    ports:
+      - "27017:27017"
+
+  # Expose Kafka for local debugging
+  kafka:
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+
+  node-server:
+    environment:
+      NODE_ENV: development
+      LOG_LEVEL: debug
+    # Mount source for hot reload (use nodemon in dev)
+    volumes:
+      - ./server/src:/app/src:ro
+      - ./server/server.js:/app/server.js:ro
+    command: ["npx", "nodemon", "server.js"]
+    ports:
+      - "5000:5000"
+
+  ml-engine:
+    volumes:
+      - ./ml-engine:/app
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    ports:
+      - "8000:8000"
+
+  identity-service:
+    ports:
+      - "8001:8001"
+
+  triage-service:
+    ports:
+      - "8002:8002"
+
+  pharmacy-service:
+    ports:
+      - "8003:8003"
+
+  # In dev, bypass Caddy and access services directly
+  caddy:
+    profiles:
+      - with-proxy  # Only starts if explicitly: docker compose --profile with-proxy up

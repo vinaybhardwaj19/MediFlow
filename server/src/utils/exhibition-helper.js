@@ -22,6 +22,7 @@ const Pharmacy     = require('../models/Pharmacy.model');
 const Appointment  = require('../models/Appointment.model');
 const Doctor       = require('../models/Doctor.model');
 const PatientProfile = require('../models/PatientProfile.model');
+const Provider     = require('../models/Provider.model');
 const { encrypt }  = require('../services/encryption.service');
 const logger       = require('./logger');
 
@@ -37,6 +38,7 @@ const demoUsers = [
     phone: '+91-98765-43210',
     gender: 'female',
     dateOfBirth: new Date('1993-06-15'),
+    profileImage: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=150&q=80'
   },
   {
     firstName: 'Dr. Vikram',
@@ -48,6 +50,7 @@ const demoUsers = [
     phone: '+91-98765-43211',
     gender: 'male',
     dateOfBirth: new Date('1978-03-22'),
+    profileImage: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&w=150&q=80'
   },
   {
     firstName: 'Priya',
@@ -59,6 +62,7 @@ const demoUsers = [
     phone: '+91-98765-43212',
     gender: 'female',
     dateOfBirth: new Date('1985-11-30'),
+    profileImage: 'https://images.unsplash.com/photo-1559839734-2b71f1536783?auto=format&fit=crop&w=150&q=80'
   },
   {
     firstName: 'Admin',
@@ -69,23 +73,41 @@ const demoUsers = [
     isVerified: true,
     phone: '+91-98765-43213',
     gender: 'other',
+    profileImage: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=150&q=80'
+  },
+  {
+    firstName: 'Alex',
+    lastName: 'Rider',
+    email: 'rider@mediflow.com',
+    passwordHash: 'Demo1234!',
+    role: 'rider',
+    isVerified: true,
+    phone: '+91-98765-43214',
+    gender: 'male',
+    profileImage: 'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?auto=format&fit=crop&w=150&q=80'
+  },
+  {
+    firstName: 'Suresh',
+    lastName: 'Worker',
+    email: 'worker@mediflow.com',
+    passwordHash: 'Demo1234!',
+    role: 'worker',
+    isVerified: true,
+    phone: '+91-98765-43215',
+    gender: 'male',
   },
 ];
 
 // ── Medicine Catalogue ────────────────────────────────────────────────────────
 const demoMedicines = [
-  { name: 'Paracetamol 500mg', generic: 'Acetaminophen', category: 'otc', price: 12.5, stock: 500, manufacturer: 'Cipla', requiresPrescription: false, description: 'Fever & pain relief. Standard first-line antipyretic.' },
-  { name: 'Amoxicillin 250mg', generic: 'Amoxicillin', category: 'prescription', price: 45.0, stock: 200, manufacturer: 'Sun Pharma', requiresPrescription: true, description: 'Broad-spectrum antibiotic — penicillin class.' },
-  { name: 'Metformin 850mg', generic: 'Metformin HCl', category: 'prescription', price: 28.0, stock: 350, manufacturer: 'Dr Reddys', requiresPrescription: true, description: 'First-line Type 2 diabetes management — biguanide class.' },
-  { name: 'Atorvastatin 20mg', generic: 'Atorvastatin', category: 'prescription', price: 65.0, stock: 280, manufacturer: 'Torrent', requiresPrescription: true, description: 'HMG-CoA reductase inhibitor — LDL cholesterol reduction.' },
-  { name: 'Cetirizine 10mg', generic: 'Cetirizine HCl', category: 'otc', price: 18.0, stock: 400, manufacturer: 'Cipla', requiresPrescription: false, description: 'Second-generation antihistamine. Non-sedating.' },
-  { name: 'Omeprazole 20mg', generic: 'Omeprazole', category: 'otc', price: 35.0, stock: 320, manufacturer: 'Ranbaxy', requiresPrescription: false, description: 'Proton pump inhibitor — GERD & peptic ulcer treatment.' },
-  { name: 'Ibuprofen 400mg', generic: 'Ibuprofen', category: 'otc', price: 15.0, stock: 600, manufacturer: 'Abbott', requiresPrescription: false, description: 'NSAID — anti-inflammatory, analgesic, antipyretic.' },
-  { name: 'Vitamin D3 1000IU', generic: 'Cholecalciferol', category: 'otc', price: 22.0, stock: 450, manufacturer: 'Himalaya', requiresPrescription: false, description: 'Bone health & immune modulation. Widespread deficiency in India.' },
-  { name: 'Aspirin 75mg', generic: 'Acetylsalicylic acid', category: 'otc', price: 8.0, stock: 700, manufacturer: 'Bayer', requiresPrescription: false, description: 'Low-dose antiplatelet therapy for cardiovascular prophylaxis.' },
-  { name: 'Salbutamol Inhaler 100mcg', generic: 'Albuterol', category: 'prescription', price: 120.0, stock: 90, manufacturer: 'GSK', requiresPrescription: true, description: 'Short-acting beta-2 agonist bronchodilator for acute asthma.' },
-  { name: 'Losartan 50mg', generic: 'Losartan Potassium', category: 'prescription', price: 55.0, stock: 180, manufacturer: 'Lupin', requiresPrescription: true, description: 'Angiotensin II receptor blocker — hypertension management.' },
-  { name: 'Azithromycin 500mg', generic: 'Azithromycin', category: 'prescription', price: 75.0, stock: 150, manufacturer: 'Cipla', requiresPrescription: true, description: 'Macrolide antibiotic — respiratory & soft tissue infections.' },
+  { name: 'Paracetamol 500mg', generic: 'Acetaminophen', category: 'otc', price: 1250, stock: 500, manufacturer: 'Cipla', requiresPrescription: false, description: 'Fever & pain relief. Standard first-line antipyretic.', images: ['https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=400&q=80'] },
+  { name: 'Amoxicillin 250mg', generic: 'Amoxicillin', category: 'prescription', price: 4500, stock: 200, manufacturer: 'Sun Pharma', requiresPrescription: true, description: 'Broad-spectrum antibiotic — penicillin class.', images: ['https://images.unsplash.com/photo-1550572017-edb79a558509?auto=format&fit=crop&w=400&q=80'], isHighRisk: true },
+  { name: 'Metformin 850mg', generic: 'Metformin HCl', category: 'prescription', price: 2800, stock: 350, manufacturer: 'Dr Reddys', requiresPrescription: true, description: 'First-line Type 2 diabetes management — biguanide class.', images: ['https://images.unsplash.com/photo-1576091160550-2173bdd99625?auto=format&fit=crop&w=400&q=80'], isHighRisk: false },
+  { name: 'Atorvastatin 20mg', generic: 'Atorvastatin', category: 'prescription', price: 6500, stock: 280, manufacturer: 'Torrent', requiresPrescription: true, description: 'HMG-CoA reductase inhibitor — LDL cholesterol reduction.', images: ['https://images.unsplash.com/photo-1550572017-edb79a558509?auto=format&fit=crop&w=400&q=80'], isHighRisk: true },
+  { name: 'Cetirizine 10mg', generic: 'Cetirizine HCl', category: 'otc', price: 1800, stock: 400, manufacturer: 'Cipla', requiresPrescription: false, description: 'Second-generation antihistamine. Non-sedating.', images: ['https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=400&q=80'] },
+  { name: 'Omeprazole 20mg', generic: 'Omeprazole', category: 'otc', price: 3500, stock: 320, manufacturer: 'Ranbaxy', requiresPrescription: false, description: 'Proton pump inhibitor — GERD & peptic ulcer treatment.', images: ['https://images.unsplash.com/photo-1631549916768-4119b2e5f926?auto=format&fit=crop&w=400&q=80'] },
+  { name: 'Ibuprofen 400mg', generic: 'Ibuprofen', category: 'otc', price: 1500, stock: 600, manufacturer: 'Abbott', requiresPrescription: false, description: 'NSAID — anti-inflammatory, analgesic, antipyretic.', images: ['https://images.unsplash.com/photo-1628771065518-0d82f1938462?auto=format&fit=crop&w=400&q=80'] },
+  { name: 'Vitamin D3 1000IU', generic: 'Cholecalciferol', category: 'otc', price: 2200, stock: 450, manufacturer: 'Himalaya', requiresPrescription: false, description: 'Bone health & immune modulation. Widespread deficiency in India.', images: ['https://images.unsplash.com/photo-1512069772995-ec65ed45afd6?auto=format&fit=crop&w=400&q=80'] },
 ];
 
 // ── Pharmacy Nodes (geo-coordinates: Bengaluru area for realistic routing) ────
@@ -328,6 +350,89 @@ async function autoSeed() {
       } else {
         logger.info(`[Seed] ℹ️  ${apptCount} appointments already exist — skipping.`);
       }
+    }
+
+    // ── Step 7: Seed Providers (Location Intelligence) ───────────────────────────
+    const providerCount = await Provider.countDocuments();
+    if (providerCount === 0) {
+      const demoProviders = [
+        {
+          name: 'Apollo Clinic Indiranagar',
+          type: 'emergency_center',
+          phone: '+91 80 1234 5678',
+          rating: 4.8,
+          reviewsCount: 142,
+          consultationFee: 50000,
+          address: {
+            street: '100 Feet Rd, Indiranagar',
+            city: 'Bengaluru',
+            state: 'Karnataka',
+            zip: '560038',
+            coordinates: { type: 'Point', coordinates: [77.6400, 12.9720] }
+          }
+        },
+        {
+          name: 'MedPlus Pharmacy Indiranagar',
+          type: 'medical_store',
+          phone: '+91 80 8765 4321',
+          rating: 4.5,
+          reviewsCount: 88,
+          address: {
+            street: '12th Main Rd, Indiranagar',
+            city: 'Bengaluru',
+            state: 'Karnataka',
+            zip: '560038',
+            coordinates: { type: 'Point', coordinates: [77.6415, 12.9730] }
+          }
+        },
+        {
+          name: 'Narayana Health Diagnostics',
+          type: 'laboratory',
+          phone: '+91 80 9999 8888',
+          rating: 4.6,
+          reviewsCount: 104,
+          address: {
+            street: 'Double Road, Indiranagar',
+            city: 'Bengaluru',
+            state: 'Karnataka',
+            zip: '560038',
+            coordinates: { type: 'Point', coordinates: [77.6380, 12.9705] }
+          }
+        },
+        {
+          name: 'Ludhiana Health Clinic',
+          type: 'hospital',
+          phone: '+91 161 500 6000',
+          rating: 4.7,
+          reviewsCount: 210,
+          consultationFee: 60000,
+          address: {
+            street: 'Mall Road',
+            city: 'Ludhiana',
+            state: 'Punjab',
+            zip: '141001',
+            coordinates: { type: 'Point', coordinates: [75.8550, 30.9020] }
+          }
+        },
+        {
+          name: 'Satguru Pharmacy Ludhiana',
+          type: 'medical_store',
+          phone: '+91 161 500 7000',
+          rating: 4.4,
+          reviewsCount: 35,
+          address: {
+            street: 'Ferozepur Road',
+            city: 'Ludhiana',
+            state: 'Punjab',
+            zip: '141001',
+            coordinates: { type: 'Point', coordinates: [75.8450, 30.8980] }
+          }
+        }
+      ];
+      await Provider.create(demoProviders);
+      logger.info('[Seed] ✅ 5 healthcare providers seeded.');
+    } else {
+      logger.info(`[Seed] ℹ️  ${providerCount} providers already exist — skipping.`);
     }
 
     logger.info('─────────────────────────────────────────────────────────');

@@ -88,16 +88,20 @@
 /* ── Real-Time Vitals Monitor ─────────────────────────────────────────────── */
 .vitals-panel {
   background: var(--glass-1);
-  backdrop-filter: blur(24px);
-  border: 1px solid var(--border);
+  backdrop-filter: blur(28px) saturate(1.4);
+  -webkit-backdrop-filter: blur(28px) saturate(1.4);
+  border: 1px solid rgba(99,102,241,.12);
   border-radius: var(--radius-xl);
   padding: 28px;
   position: relative; overflow: hidden;
+  box-shadow: 0 12px 48px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.04);
 }
 .vitals-panel::before {
   content: '';
   position: absolute; top: -1px; left: 24px; right: 24px; height: 2px;
   background: var(--gradient-brand);
+  filter: blur(1px);
+  opacity: .8;
   border-radius: 0 0 4px 4px;
 }
 .vitals-header {
@@ -132,9 +136,15 @@
   border-radius: var(--radius);
   padding: 16px;
   display: flex; flex-direction: column; gap: 6px;
-  transition: var(--transition);
+  transition: all .35s cubic-bezier(.4,0,.2,1);
   position: relative; overflow: hidden;
 }
+.vital-tile:hover { transform: translateY(-3px) scale(1.02); }
+.vital-tile.hr:hover    { box-shadow: 0 8px 30px rgba(244,63,94,.2),  0 0 0 1px rgba(244,63,94,.25); border-color: rgba(244,63,94,.3); }
+.vital-tile.spo2:hover  { box-shadow: 0 8px 30px rgba(56,189,248,.2),  0 0 0 1px rgba(56,189,248,.25); border-color: rgba(56,189,248,.3); }
+.vital-tile.bp:hover    { box-shadow: 0 8px 30px rgba(167,139,250,.2), 0 0 0 1px rgba(167,139,250,.25); border-color: rgba(167,139,250,.3); }
+.vital-tile.temp:hover  { box-shadow: 0 8px 30px rgba(251,146,60,.2),  0 0 0 1px rgba(251,146,60,.25); border-color: rgba(251,146,60,.3); }
+.vital-tile.gluc:hover  { box-shadow: 0 8px 30px rgba(52,211,153,.2),  0 0 0 1px rgba(52,211,153,.25); border-color: rgba(52,211,153,.3); }
 .vital-tile::after {
   content: '';
   position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
@@ -162,6 +172,7 @@
   font-family: 'Outfit', sans-serif;
   font-size: 1.8rem; font-weight: 800; line-height: 1;
   transition: var(--transition-slow);
+  text-shadow: 0 0 20px currentColor;
 }
 .vital-value.hr   { color: var(--vital-hr);   }
 .vital-value.spo2 { color: var(--vital-spo2); }

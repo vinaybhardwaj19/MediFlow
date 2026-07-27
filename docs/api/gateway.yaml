@@ -1,0 +1,123 @@
+openapi: 3.0.3
+info:
+  title: MediFlow Go API Gateway
+  description: |
+    High-performance reverse proxy gateway written in Go for sub-millisecond
+    authentication overhead. Handles DID/VC verification, PQC decryption,
+    token-bucket rate limiting, and request routing to downstream microservices.
+  version: 2.0.0
+
+servers:
+  - url: http://localhost:8080
+    description: Development Gateway
+
+paths:
+  /health:
+    get:
+      summary: Gateway liveness and readiness check
+      tags: [System]
+      responses:
+        '200':
+          description: Gateway is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  service:
+                    type: string
+                    example: mediflow-gateway
+                  uptime:
+                    type: string
+
+  /api/{path}:
+    get:
+      summary: Proxy GET requests to Node.js backend
+      tags: [Proxy]
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: Authorization
+          in: header
+          schema:
+            type: string
+          description: Bearer JWT or W3C Verifiable Presentation
+      responses:
+        '200':
+          description: Proxied response from Node.js backend
+        '429':
+          description: Rate limit exceeded
+        '401':
+          description: Authentication failed
+    post:
+      summary: Proxy POST requests to Node.js backend
+      tags: [Proxy]
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response
+        '429':
+          description: Rate limit exceeded
+
+  /ml/{path}:
+    get:
+      summary: Proxy requests to ML Engine
+      tags: [Proxy]
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response from ML Engine
+    post:
+      summary: Proxy POST requests to ML Engine
+      tags: [Proxy]
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response from ML Engine
+
+  /identity/{path}:
+    get:
+      summary: Proxy requests to Identity Service
+      tags: [Proxy]
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response from Identity Service
+    post:
+      summary: Proxy POST requests to Identity Service
+      tags: [Proxy]
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response from Identity Service

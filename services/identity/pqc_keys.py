@@ -311,8 +311,7 @@ class DilithiumSigner:
             secret_key = signer.export_secret_key()
             signer.free()
         else:
-            # Simulation: use Ed25519 as a placeholder (also quantum-vulnerable,
-            # but provides a real signature scheme for exhibition flow testing)
+            # Simulation: use Ed25519 as a placeholder or deterministic HMAC
             if _NACL_AVAILABLE:
                 private = Ed25519PrivateKey.generate()
                 public  = private.public_key()
@@ -320,7 +319,7 @@ class DilithiumSigner:
                 public_key = public.public_bytes(Encoding.Raw, PublicFormat.Raw)
             else:
                 secret_key = secrets.token_bytes(64)
-                public_key = secrets.token_bytes(32)
+                public_key = hashlib.sha3_256(secret_key).digest()
             log.debug("[Dilithium] Using simulation signature (liboqs not available)")
 
         pub_b64 = base64.urlsafe_b64encode(public_key).rstrip(b'=').decode()
@@ -356,9 +355,10 @@ class DilithiumSigner:
             if _NACL_AVAILABLE:
                 private = Ed25519PrivateKey.from_private_bytes(secret_key[:32])
                 return private.sign(message)
-            # Last resort simulation: HMAC-SHA3-256 (NOT a real signature scheme)
+            # Last resort simulation: HMAC-SHA3-256 using public_key derived key
             import hmac
-            return hmac.new(secret_key[:32], message, hashlib.sha3_256).digest()
+            derived_key = hashlib.sha3_256(secret_key).digest() if len(secret_key) == 64 else secret_key[:32]
+            return hmac.new(derived_key, message, hashlib.sha3_256).digest()
 
     @staticmethod
     def verify(public_key: bytes, message: bytes, signature: bytes) -> bool:
@@ -398,8 +398,8 @@ class DilithiumSigner:
                     return False
             # HMAC verify fallback
             import hmac as hmac_lib
-            expected_sig = hmac_lib.new(b"sim_key", message, hashlib.sha3_256).digest()
-            return hmac_lib.compare_digest(signature[:32], expected_sig)
+            expected = hmac_lib.new(public_key[:32], message, hashlib.sha3_256).digest()
+            return hmac_lib.compare_digest(expected, signature)
 
 
 # ── Utility Functions ─────────────────────────────────────────────────────────

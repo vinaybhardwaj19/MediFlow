@@ -1,0 +1,340 @@
+openapi: 3.0.3
+info:
+  title: MediFlow ML Engine API
+  description: |
+    FastAPI-based Machine Learning microservice for symptom triage prediction,
+    SHAP explainability, drug-drug interaction checking (GNN), clinical NLP
+    entity extraction, and federated learning simulation.
+  version: 2.0.0
+
+servers:
+  - url: http://localhost:8000
+    description: Development ML Engine
+
+paths:
+  /health:
+    get:
+      summary: Liveness + model status + evaluation metrics
+      tags: [System]
+      responses:
+        '200':
+          description: ML engine health status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  modelLoaded:
+                    type: boolean
+                  modelVersion:
+                    type: string
+                  shapEnabled:
+                    type: boolean
+                  evalMetrics:
+                    type: object
+
+  /predict:
+    post:
+      summary: Symptom triage prediction with SHAP explanation
+      description: |
+        Pipeline: Emergency keyword override → Vital sign flags →
+        MEWS + CURB-65 scoring → Random Forest specialty prediction →
+        Gradient Boosting urgency prediction → SHAP explanation
+      tags: [Triage]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [symptoms]
+              properties:
+                symptoms:
+                  type: array
+                  items:
+                    type: string
+                  example: ["chest pain", "shortness of breath"]
+                vitalSigns:
+                  type: object
+                  properties:
+                    heartRate:
+                      type: number
+                    oxygenSaturation:
+                      type: number
+                    systolicBP:
+                      type: number
+                    diastolicBP:
+                      type: number
+                    temperature:
+                      type: number
+                    respiratoryRate:
+                      type: number
+                    avpuScore:
+                      type: string
+                      enum: [alert, voice, pain, unresponsive]
+                patientAge:
+                  type: integer
+                symptomDetails:
+                  type: object
+                  properties:
+                    severity:
+                      type: string
+                      enum: [mild, moderate, severe]
+                    duration:
+                      type: string
+      responses:
+        '200':
+          description: Triage prediction with SHAP explanation and clinical scores
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  recommendedSpecialty:
+                    type: string
+                  confidence:
+                    type: number
+                  urgencyLevel:
+                    type: string
+                    enum: [routine, urgent, emergency]
+                  differentials:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        condition:
+                          type: string
+                        probability:
+                          type: number
+                  explanation:
+                    type: object
+                    properties:
+                      topFeatures:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            symptom:
+                              type: string
+                            shap_value:
+                              type: number
+                            direction:
+                              type: string
+                            present:
+                              type: boolean
+                      baseValue:
+                        type: number
+                      outputValue:
+                        type: number
+                      method:
+                        type: string
+                        enum: [shap_tree, feature_importance_fallback]
+                  clinicalScores:
+                    type: object
+                    properties:
+                      mews:
+                        type: integer
+                      mewsLevel:
+                        type: string
+                      curb65:
+                        type: integer
+                      curb65Risk:
+                        type: string
+                      computed:
+                        type: boolean
+                  processingTimeMs:
+                    type: number
+                  modelVersion:
+                    type: string
+        '503':
+          description: Model not yet loaded
+
+  /metrics:
+    get:
+      summary: Full model evaluation metrics for performance dashboard
+      tags: [Analytics]
+      responses:
+        '200':
+          description: Model accuracy, precision, recall, F1
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  specialty_accuracy:
+                    type: number
+                  urgency_accuracy:
+                    type: number
+                  modelVersion:
+                    type: string
+                  calibrated:
+                    type: boolean
+                  shapEnabled:
+                    type: boolean
+                  specialties:
+                    type: array
+                    items:
+                      type: string
+                  urgencyClasses:
+                    type: array
+                    items:
+                      type: string
+
+  /specialties:
+    get:
+      summary: List all supported medical specialties
+      tags: [Reference]
+      responses:
+        '200':
+          description: Array of specialty names
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  specialties:
+                    type: array
+                    items:
+                      type: string
+
+  /symptoms:
+    get:
+      summary: List all known symptom tokens (for autocomplete)
+      tags: [Reference]
+      responses:
+        '200':
+          description: Sorted array of symptom names
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  symptoms:
+                    type: array
+                    items:
+                      type: string
+
+  /federated/stats:
+    get:
+      summary: Federated learning simulation statistics
+      description: |
+        Simulates 3-hospital FedAvg (McMahan et al., 2017) with
+        differential privacy (Laplace noise) gradient aggregation.
+      tags: [FederatedLearning]
+      responses:
+        '200':
+          description: Federated learning simulation results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  algorithm:
+                    type: string
+                    example: "FedAvg (McMahan et al., 2017)"
+                  federatedAccuracy:
+                    type: number
+                  totalFederatedSamples:
+                    type: integer
+                  hospitals:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        localAccuracy:
+                          type: number
+                        localSamples:
+                          type: integer
+                        privacyBudget:
+                          type: string
+
+  /ddi/check:
+    post:
+      summary: Check pairwise drug-drug interactions via GraphSAGE GNN
+      tags: [DrugInteractions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [drugs]
+              properties:
+                drugs:
+                  type: array
+                  items:
+                    type: string
+                  minItems: 2
+                  example: ["warfarin", "aspirin", "metformin"]
+      responses:
+        '200':
+          description: Pairwise interaction results with severity
+        '503':
+          description: DDI module not available
+
+  /ddi/graph:
+    get:
+      summary: Export full drug interaction graph for visualization
+      tags: [DrugInteractions]
+      responses:
+        '200':
+          description: Graph nodes and edges for D3.js/vis.js rendering
+
+  /ddi/drug/{drug_name}:
+    get:
+      summary: Get all interaction partners for a specific drug
+      tags: [DrugInteractions]
+      parameters:
+        - name: drug_name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Drug interaction neighbors
+
+  /nlp/extract:
+    post:
+      summary: Extract clinical entities from unstructured text
+      description: |
+        Uses NegEx and regex-based NER to extract symptoms, diagnoses,
+        and medications from clinical notes.
+      tags: [ClinicalNLP]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [notes]
+              properties:
+                notes:
+                  type: string
+                  example: "Patient presents with chest pain and shortness of breath. Currently on metformin 500mg."
+      responses:
+        '200':
+          description: Extracted clinical entities
+        '503':
+          description: NLP module not available
+
+  /docs:
+    get:
+      summary: Interactive Swagger UI documentation
+      tags: [System]
+      responses:
+        '200':
+          description: Swagger UI HTML page
+
+  /redoc:
+    get:
+      summary: ReDoc API documentation
+      tags: [System]
+      responses:
+        '200':
+          description: ReDoc HTML page

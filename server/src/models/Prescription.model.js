@@ -25,6 +25,8 @@ const prescriptionSchema = new mongoose.Schema({
   notes            : { type: String, select: false }, // AES-256 encrypted
   digitalSignature : String,
   isVerified       : { type: Boolean, default: false },
+  maxUsageCount    : { type: Number, default: 1 }, // How many times it can be dispensed
+  usedCount        : { type: Number, default: 0 },
   expiresAt        : { type: Date, default: () => new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) },
   status           : {
     type   : String,

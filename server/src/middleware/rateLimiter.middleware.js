@@ -25,16 +25,16 @@ const limiterBase = {
 /** Applied globally to all routes */
 const globalLimiter = rateLimit({
   ...limiterBase,
-  windowMs : env.RATE_LIMIT_WINDOW,
-  max      : env.RATE_LIMIT_MAX,
+  windowMs : env.RATE_LIMIT_WINDOW || 15 * 60 * 1000, // 15-minute window
+  max      : env.RATE_LIMIT_MAX    || 100,             // 100 requests per 15 min
 });
 
 /** Applied only to auth endpoints — stricter to prevent brute-force */
 const authLimiter = rateLimit({
   ...limiterBase,
-  windowMs : 15 * 60 * 1000,
-  max      : process.env.NODE_ENV === 'development' ? 1000 : 10,
-  message  : 'Too many auth attempts. Try again later.',
+  windowMs : 15 * 60 * 1000,  // 15-minute window
+  max      : 10,               // 10 auth attempts per 15 min — brute-force protection
+  message  : 'Too many login attempts. Please try again later.',
 });
 
 /** Applied to triage/ML endpoints — prevent model abuse */

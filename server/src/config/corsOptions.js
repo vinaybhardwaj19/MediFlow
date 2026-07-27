@@ -12,6 +12,8 @@ const allowedOrigins = [
   'http://127.0.0.1:5000',
   'http://localhost:3000',
   'http://127.0.0.1:3000',
+  'http://localhost:5050',
+  'http://127.0.0.1:5050',
   'http://localhost:8080',
   'http://localhost:8081',
   'http://127.0.0.1:8081',
@@ -22,7 +24,14 @@ const allowedOrigins = [
 ].filter(Boolean);
 
 const corsOptions = {
-  origin: true, // dynamically allow any origin for the exhibition demo
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, server-to-server)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS: origin "${origin}" is not allowed`));
+    }
+  },
 
   credentials   : true,             // Required for httpOnly cookie refresh tokens
   methods        : ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],

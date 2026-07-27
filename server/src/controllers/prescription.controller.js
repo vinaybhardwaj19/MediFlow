@@ -55,7 +55,7 @@ exports.createPrescription = async (req, res) => {
 
   // Notify patient — non-blocking
   const [patient, doctor] = await Promise.all([
-    User.findById(patientId).select('firstName email'),
+    User.findById(patientId).select('firstName email phone'),
     User.findById(req.user.id).select('firstName lastName'),
   ]);
   if (patient?.email) {
@@ -66,8 +66,32 @@ exports.createPrescription = async (req, res) => {
       prescriptionId: rx._id.toString(),
     });
   }
+  if (patient?.phone) {
+    const { sendSMS } = require('../utils/twilio');
+    const smsMsg = `MediFlow: Hello ${patient.firstName}, your prescription from Dr. ${doctor.firstName} ${doctor.lastName} is ready! You can view it in your MediFlow dashboard.`;
+    sendSMS(patient.phone, smsMsg).catch(err => console.error('[Prescription SMS] Error:', err.message));
+  }
 
   return ApiResponse.created(res, decryptPrescription(rx), 'Prescription created');
+};
+
+// ─── GET /api/v1/prescriptions ────────────────────────────────────────────────
+exports.listAllPrescriptions = async (req, res) => {
+  const { limit = 20, page = 1 } = req.query;
+  const skip = (Number(page) - 1) * Number(limit);
+
+  // If patient, restrict to their own
+  const filter = req.user.role === 'patient' ? { patientId: req.user.id } : {};
+
+  const rxList = await Prescription.find(filter)
+    .select('+diagnosis +notes')
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(Number(limit))
+    .populate('doctorId', 'firstName lastName')
+    .populate('patientId', 'firstName lastName');
+
+  return ApiResponse.ok(res, rxList.map(decryptPrescription));
 };
 
 // ─── GET /api/v1/prescriptions/:id ───────────────────────────────────────────

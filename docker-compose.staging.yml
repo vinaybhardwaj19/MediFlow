@@ -1,0 +1,60 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  docker-compose.staging.yml — Staging environment overrides
+# ─────────────────────────────────────────────────────────────────────────────
+#  Usage: docker compose -f docker-compose.yml -f docker-compose.staging.yml up -d --build
+# ─────────────────────────────────────────────────────────────────────────────
+
+version: '3.8'
+
+services:
+  node-server:
+    environment:
+      - NODE_ENV=staging
+      - LOG_LEVEL=info
+    env_file:
+      - config/environments/staging.env
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+    restart: always
+
+  ml-engine:
+    environment:
+      - LOG_LEVEL=info
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+    restart: always
+
+  gateway:
+    restart: always
+
+  mongodb:
+    # Staging uses separate volume — never shares data with dev/prod
+    volumes:
+      - mongodb_staging_data:/data/db
+    restart: always
+
+  kafka:
+    environment:
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
+    restart: always
+
+  caddy:
+    environment:
+      - DOMAIN=${DOMAIN:-staging.mediflow.local}
+    restart: always
+
+  prometheus:
+    restart: always
+
+  grafana:
+    restart: always
+
+volumes:
+  mongodb_staging_data:
+    name: mediflow-staging-mongo-data

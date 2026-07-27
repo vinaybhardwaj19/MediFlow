@@ -1,0 +1,56 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  Caddyfile — MediFlow Reverse Proxy + Auto-TLS
+# ─────────────────────────────────────────────────────────────────────────────
+#  In production, set DOMAIN env var to your domain (e.g., mediflow.example.com)
+#  Caddy will auto-provision Let's Encrypt TLS certificates.
+#  Locally, it serves on :80 with automatic self-signed HTTPS on :443.
+# ─────────────────────────────────────────────────────────────────────────────
+
+{$DOMAIN:localhost} {
+	# ── API routes → Node.js backend ─────────────────────────────────────
+	handle /api/* {
+		reverse_proxy node-server:5000
+	}
+
+	# ── Health check endpoint ────────────────────────────────────────────
+	handle /health {
+		reverse_proxy node-server:5000
+	}
+
+	# ── ML Engine endpoints ──────────────────────────────────────────────
+	handle /ml/* {
+		reverse_proxy ml-engine:8000
+	}
+
+	# ── Socket.IO (WebSocket upgrade support) ────────────────────────────
+	handle /socket.io/* {
+		reverse_proxy node-server:5000
+	}
+
+	# ── Static client SPA ────────────────────────────────────────────────
+	handle {
+		root * /srv/client
+		try_files {path} /index.html
+		file_server
+	}
+
+	# ── Security Headers ─────────────────────────────────────────────────
+	header {
+		Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(self), geolocation=(self)"
+		-Server
+	}
+
+	# ── Gzip compression ─────────────────────────────────────────────────
+	encode gzip
+
+	# ── Logging ──────────────────────────────────────────────────────────
+	log {
+		output stdout
+		format json
+		level INFO
+	}
+}

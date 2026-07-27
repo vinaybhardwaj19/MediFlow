@@ -8,7 +8,13 @@ export class HealthScoreEngine {
     this.weights = { hr:0.20, spo2:0.25, bp:0.20, temp:0.15, glucose:0.10, rr:0.10 };
   }
   compute(vitals={}) {
-    const { hr=72, spo2=98, sbp=120, temp=37.0, glucose=95, rr=16 } = vitals;
+    const hr = vitals.heart_rate_bpm ?? vitals.heartRate ?? vitals.hr ?? 72;
+    const spo2 = vitals.spo2_pct ?? vitals.spo2 ?? 98;
+    const sbp = vitals.systolic_bp_mmhg ?? vitals.systolicBP ?? vitals.sbp ?? 120;
+    const temp = vitals.body_temperature_c ?? vitals.temperature ?? vitals.temp ?? 37.0;
+    const glucose = vitals.glucose_mg_dl ?? vitals.glucose ?? 95;
+    const rr = vitals.respiratory_rate ?? vitals.respiratoryRate ?? vitals.rr ?? 16;
+
     const scores = {
       hr: Math.max(0, 100 - Math.abs(hr-80)/80*200),
       spo2: spo2>=95?100:spo2>=90?60:20,
@@ -31,18 +37,27 @@ export class HealthScoreEngine {
   }
   _risks(v) {
     const r=[];
-    if(v.spo2<95) r.push({level:'high',label:'Low Oxygen Saturation',action:'Seek immediate medical attention'});
-    if(v.hr>100) r.push({level:'medium',label:'Tachycardia',action:'Rest and monitor. Consult doctor if persistent.'});
-    if(v.sbp>140) r.push({level:'high',label:'Hypertension Risk',action:'Reduce sodium, consult cardiologist.'});
-    if(v.temp>38.5) r.push({level:'high',label:'Fever Detected',action:'Antipyretics + hydration. ER if >39.5°C'});
-    if(v.glucose>126) r.push({level:'medium',label:'Elevated Glucose',action:'Monitor diet, consult endocrinologist.'});
+    const spo2 = v.spo2_pct ?? v.spo2 ?? 98;
+    const hr = v.heart_rate_bpm ?? v.heartRate ?? v.hr ?? 72;
+    const sbp = v.systolic_bp_mmhg ?? v.systolicBP ?? v.sbp ?? 120;
+    const temp = v.body_temperature_c ?? v.temperature ?? v.temp ?? 37.0;
+    const glucose = v.glucose_mg_dl ?? v.glucose ?? 95;
+
+    if(spo2<95) r.push({level:'high',label:'Low Oxygen Saturation',action:'Seek immediate medical attention'});
+    if(hr>100) r.push({level:'medium',label:'Tachycardia',action:'Rest and monitor. Consult doctor if persistent.'});
+    if(sbp>140) r.push({level:'high',label:'Hypertension Risk',action:'Reduce sodium, consult cardiologist.'});
+    if(temp>38.5) r.push({level:'high',label:'Fever Detected',action:'Antipyretics + hydration. ER if >39.5°C'});
+    if(glucose>126) r.push({level:'medium',label:'Elevated Glucose',action:'Monitor diet, consult endocrinologist.'});
     return r;
   }
   _recs(v, s) {
     const r=[];
+    const sbp = v.systolic_bp_mmhg ?? v.systolicBP ?? v.sbp ?? 120;
+    const glucose = v.glucose_mg_dl ?? v.glucose ?? 95;
+
     if(s.hr<70) r.push('🏃 30 min daily aerobic exercise improves cardiac efficiency');
-    if(v.sbp>130) r.push('🧂 Reduce sodium to <2g/day and manage stress levels');
-    if(v.glucose>100) r.push('🥗 Low-GI diet + post-meal walks regulate blood sugar');
+    if(sbp>130) r.push('🧂 Reduce sodium to <2g/day and manage stress levels');
+    if(glucose>100) r.push('🥗 Low-GI diet + post-meal walks regulate blood sugar');
     r.push('💧 Maintain 2–3L daily hydration');
     r.push('😴 7–8 hours quality sleep optimises all vitals');
     return r.slice(0,3);
@@ -135,11 +150,35 @@ export function initEmergencySOS() {
       if(countdownEl) countdownEl.textContent=_sosCD;
       if(_sosCD<=0){
         clearInterval(_sosTimer); modal?.classList.add('hidden');
-        import('./toast.js').then(({toastError})=>toastError('🚨 SOS ACTIVATED','Emergency team dispatched. Nearest ER: 2.3km, ETA: 8 mins'));
+        _triggerSOSDispatch();
       }
     },1000);
   });
   cancelBtn?.addEventListener('click',()=>{ clearInterval(_sosTimer); modal?.classList.add('hidden'); });
+}
+
+async function _triggerSOSDispatch() {
+  const { toastError, toastSuccess } = await import('./toast.js');
+  toastError('🚨 SOS ACTIVATED','Emergency team dispatched.');
+
+  try {
+    const { speakText } = await import('./voice-nav.js');
+    speakText("Emergency SOS Activated. Ambulance dispatched to your location.", 'hi-IN');
+  } catch (e) {}
+
+  // Simulation: Find nearest hospital using real logic
+  try {
+    const { get } = await import('./api.js');
+    const res = await get('/providers/nearby?lat=12.9716&lng=77.5946&type=hospital&radius=5');
+    const hospital = res.data?.[0] || { name: 'Nearest Hospital' };
+
+    setTimeout(() => {
+      toastSuccess('Unit En Route', `Ambulance dispatched from ${hospital.name}. ETA: 6 mins.`);
+      import('./voice-nav.js').then(m => m.speakText(`Ambulance dispatched from ${hospital.name}. ETA 6 minutes.`, 'hi-IN'));
+    }, 2000);
+  } catch (err) {
+    console.error('[SOS] Dispatch error:', err);
+  }
 }
 
 // ── PDF Health Report ─────────────────────────────────────────────────────────

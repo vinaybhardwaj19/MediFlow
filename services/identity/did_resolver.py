@@ -245,8 +245,10 @@ class DIDResolver:
         - Deactivate a DID (soft-delete, irreversible)
     """
 
-    def __init__(self, db_pool: asyncpg.Pool):
+    def __init__(self, db_pool: Optional[asyncpg.Pool]):
         self._db = db_pool
+        self._mem_dids = {}
+        self._mem_keys = {}
 
     # ── Registration ──────────────────────────────────────────────────────────
 
@@ -257,29 +259,9 @@ class DIDResolver:
         kyber_keypair,      # KEMKeyPair from pqc_keys
         legacy_user_id: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """
-        Register a new self-sovereign identity on the MediFlow platform.
-
-        This is called once per patient/doctor/pharmacy when they onboard.
-        The DID is permanently derived from their Dilithium-3 public key.
-
-        Process:
-            1. Derive the DID from the Dilithium-3 public key
-            2. Build the W3C DID Document
-            3. Store the DID Document in identity.did_documents
-            4. Store both public keys in identity.pqc_key_vault
-            5. Return the DID + the private keys (ONLY returned once — patient must save them)
-
-        Returns:
-            A dict containing: did, did_document, and the raw private key bytes
-            (Dilithium-3 secret key + Kyber-768 secret key).
-            The caller MUST securely transmit the private keys to the patient's device.
-        """
-        # ── Step 1: Derive DID from the Dilithium-3 public key ────────────────
         did = derive_did_from_public_key(dilithium_keypair.public_key)
         log.info(f"[DID] Registering new identity: {did} (type={subject_type})")
 
-        # ── Step 2: Build DID Document ─────────────────────────────────────────
         did_document = build_did_document(
             did=did,
             dilithium_public_key=dilithium_keypair.public_key,
@@ -287,7 +269,24 @@ class DIDResolver:
             subject_type=subject_type,
         )
 
-        # ── Step 3 & 4: Store in database (atomic transaction) ─────────────────
+        if not self._db:
+            self._mem_dids[did] = did_document
+            self._mem_keys[f"{did}#dilithium3-auth-1"] = dilithium_keypair.public_key_b64
+            self._mem_keys[f"{did}#kyber768-key-agreement-1"] = kyber_keypair.public_key_b64
+            log.info(f"[DID] [In-Memory] Identity registered: {did}")
+            return {
+                "did": did,
+                "did_document": did_document,
+                "secret_keys": {
+                    "dilithium3_secret_key_b64": encode_b64url(dilithium_keypair.secret_key),
+                    "kyber768_secret_key_b64":   encode_b64url(kyber_keypair.secret_key),
+                    "warning": (
+                        "CRITICAL: Store these keys securely on your device. "
+                        "MediFlow does not retain copies. Loss = permanent identity loss."
+                    ),
+                },
+            }
+
         did_id = str(uuid.uuid4())
         async with self._db.acquire() as conn:
             async with conn.transaction():
@@ -337,8 +336,6 @@ class DIDResolver:
         return {
             "did": did,
             "did_document": did_document,
-            # The private keys are returned ONCE and must be saved by the client.
-            # After this response, MediFlow does NOT store them.
             "secret_keys": {
                 "dilithium3_secret_key_b64": encode_b64url(dilithium_keypair.secret_key),
                 "kyber768_secret_key_b64":   encode_b64url(kyber_keypair.secret_key),
@@ -352,14 +349,9 @@ class DIDResolver:
     # ── Resolution ────────────────────────────────────────────────────────────
 
     async def resolve(self, did: str) -> Optional[Dict[str, Any]]:
-        """
-        Resolve a DID to its DID Document.
+        if not self._db:
+            return self._mem_dids.get(did)
 
-        This is the fundamental operation of the DID ecosystem — mapping
-        a DID string to the document that describes it.
-
-        Returns None if the DID does not exist or has been deactivated.
-        """
         row = await self._db.fetchrow("""
             SELECT did_document, is_active
             FROM identity.did_documents
@@ -370,7 +362,6 @@ class DIDResolver:
             return None
 
         if not row["is_active"]:
-            # Deactivated DID: return a minimal deactivation document (W3C spec §7.2)
             return {
                 "@context": DID_CONTEXT,
                 "id": did,
@@ -382,6 +373,9 @@ class DIDResolver:
     # ── Key Retrieval ─────────────────────────────────────────────────────────
 
     async def get_public_key(self, did: str, key_id: str) -> Optional[bytes]:
+        if not self._db:
+            pub_b64 = self._mem_keys.get(key_id)
+            return decode_b64url(pub_b64) if pub_b64 else None
         """
         Fetch a specific public key's raw bytes from the pqc_key_vault.
 
@@ -412,3 +406,51 @@ class DIDResolver:
             ORDER BY v.created_at DESC
         """, did)
         return [dict(r) for r in rows]
+
+    async def update_dilithium_key(self, did: str, new_public_key: bytes) -> bool:
+        """
+        Update the Dilithium-3 public key for a DID (Key Rotation).
+        Persists newly rotated key into pqc_key_vault and updates the DID document.
+        """
+        row = await self._db.fetchrow("SELECT id, did_document FROM identity.did_documents WHERE did = $1", did)
+        if not row:
+            return False
+
+        did_id = row["id"]
+        doc = json.loads(row["did_document"])
+        new_key_id = f"{did}#dilithium3-auth-1"
+        new_pub_b64 = encode_b64url(new_public_key)
+
+        # Update DID Document verificationMethod
+        for vm in doc.get("verificationMethod", []):
+            if vm.get("id") == new_key_id or "Dilithium" in vm.get("type", ""):
+                vm["publicKeyMultibase"] = "u" + new_pub_b64
+
+        doc["updated"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+        async with self._db.acquire() as conn:
+            async with conn.transaction():
+                # Deactivate old key
+                await conn.execute("""
+                    UPDATE identity.pqc_key_vault
+                    SET is_active = FALSE
+                    WHERE did_id = $1 AND key_purpose = 'authentication'
+                """, did_id)
+
+                # Insert new key
+                await conn.execute("""
+                    INSERT INTO identity.pqc_key_vault
+                        (did_id, key_id, algorithm, key_purpose, public_key_b64, key_fingerprint)
+                    VALUES ($1, $2, 'NIST-FIPS-204', 'authentication', $3, $4)
+                """, did_id, new_key_id, new_pub_b64, compute_key_fingerprint(new_public_key))
+
+                # Update DID Document
+                await conn.execute("""
+                    UPDATE identity.did_documents
+                    SET did_document = $1, updated_at = NOW()
+                    WHERE id = $2
+                """, json.dumps(doc), did_id)
+
+        log.info(f"[DID] Key rotation completed for DID: {did}")
+        return True
+

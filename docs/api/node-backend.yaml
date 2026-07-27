@@ -1,0 +1,1320 @@
+openapi: 3.0.3
+info:
+  title: MediFlow Enterprise REST API
+  description: |
+    Comprehensive REST API for MediFlow telemedicine, AI triage, e-pharmacy,
+    and healthcare management platform. All protected routes require JWT
+    Bearer authentication via the Authorization header.
+  version: 2.0.0
+  contact:
+    name: MediFlow Engineering
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:5000/api/v1
+    description: Development server
+  - url: https://mediflow.example.com/api/v1
+    description: Production server
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+    User:
+      type: object
+      properties:
+        _id:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [patient, doctor, pharmacist, rider, admin]
+        phone:
+          type: string
+    TriageResult:
+      type: object
+      properties:
+        recommendedSpecialty:
+          type: string
+        confidence:
+          type: number
+          format: float
+        urgencyLevel:
+          type: string
+          enum: [routine, urgent, emergency]
+        differentials:
+          type: array
+          items:
+            type: object
+            properties:
+              condition:
+                type: string
+              probability:
+                type: number
+        explanation:
+          type: object
+          properties:
+            topFeatures:
+              type: array
+              items:
+                type: object
+                properties:
+                  symptom:
+                    type: string
+                  shap_value:
+                    type: number
+                  direction:
+                    type: string
+            method:
+              type: string
+        clinicalScores:
+          type: object
+          properties:
+            mews:
+              type: integer
+            mewsLevel:
+              type: string
+            curb65:
+              type: integer
+            curb65Risk:
+              type: string
+    Appointment:
+      type: object
+      properties:
+        _id:
+          type: string
+        patientId:
+          type: string
+        doctorId:
+          type: string
+        scheduledAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [pending, confirmed, in-progress, completed, cancelled]
+        notes:
+          type: string
+          description: AES-256-GCM encrypted
+    Prescription:
+      type: object
+      properties:
+        _id:
+          type: string
+        appointmentId:
+          type: string
+        doctorId:
+          type: string
+        patientId:
+          type: string
+        diagnosis:
+          type: string
+          description: AES-256-GCM encrypted
+        medications:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              dosage:
+                type: string
+              frequency:
+                type: string
+              duration:
+                type: string
+        status:
+          type: string
+          enum: [active, dispensed, cancelled]
+
+paths:
+  # ── Health ────────────────────────────────────────────────────────────────
+  /health:
+    get:
+      summary: Service health check
+      tags: [System]
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+  # ── Authentication ────────────────────────────────────────────────────────
+  /auth/register:
+    post:
+      summary: Register a new user account
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [firstName, lastName, email, password, role]
+              properties:
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+                role:
+                  type: string
+                  enum: [patient, doctor, pharmacist, rider]
+                phone:
+                  type: string
+      responses:
+        '201':
+          description: User registered successfully
+        '409':
+          description: Email already registered
+
+  /auth/login:
+    post:
+      summary: Authenticate user and return JWT tokens
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Invalid credentials
+
+  /auth/refresh:
+    post:
+      summary: Refresh access token using refresh token cookie
+      tags: [Authentication]
+      responses:
+        '200':
+          description: New access token issued
+        '401':
+          description: Invalid or expired refresh token
+
+  /auth/logout:
+    post:
+      summary: Logout and invalidate refresh token
+      tags: [Authentication]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Logged out successfully
+
+  /auth/me:
+    get:
+      summary: Get current authenticated user profile
+      tags: [Authentication]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current user profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+    put:
+      summary: Update current user profile
+      tags: [Authentication]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                phone:
+                  type: string
+      responses:
+        '200':
+          description: Profile updated
+
+  # ── Triage ────────────────────────────────────────────────────────────────
+  /triage:
+    post:
+      summary: Submit symptoms for AI triage with SHAP explainability
+      tags: [Triage]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [symptoms]
+              properties:
+                symptoms:
+                  type: array
+                  items:
+                    type: string
+                  example: ["chest pain", "shortness of breath", "fever"]
+                vitalSigns:
+                  type: object
+                  properties:
+                    heartRate:
+                      type: number
+                    oxygenSaturation:
+                      type: number
+                    systolicBP:
+                      type: number
+                    temperature:
+                      type: number
+                    respiratoryRate:
+                      type: number
+                patientAge:
+                  type: integer
+      responses:
+        '200':
+          description: Triage prediction with SHAP explanation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TriageResult'
+
+  /triage/{id}:
+    get:
+      summary: Get a specific triage record
+      tags: [Triage]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Triage record
+
+  /triage/patient/{patientId}:
+    get:
+      summary: List triage history for a patient
+      tags: [Triage]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: patientId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Array of triage records
+
+  /triage/ml/metrics:
+    get:
+      summary: Get ML model performance metrics
+      tags: [Triage]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Model evaluation metrics
+
+  /triage/ml/federated:
+    get:
+      summary: Get federated learning simulation statistics
+      tags: [Triage]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: FedAvg simulation stats across hospital nodes
+
+  /triage/ml/ddi/check:
+    post:
+      summary: Check drug-drug interactions via GNN
+      tags: [Triage]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [drugs]
+              properties:
+                drugs:
+                  type: array
+                  items:
+                    type: string
+                  minItems: 2
+                  example: ["warfarin", "aspirin", "metformin"]
+      responses:
+        '200':
+          description: Pairwise interaction results
+
+  /triage/ml/ddi/graph:
+    get:
+      summary: Export drug interaction graph for visualization
+      tags: [Triage]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Graph nodes and edges for D3.js/vis.js
+
+  /triage/nlp/extract:
+    post:
+      summary: Extract clinical entities from unstructured notes
+      tags: [Triage]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [notes]
+              properties:
+                notes:
+                  type: string
+                  example: "Patient presents with chest pain and shortness of breath"
+      responses:
+        '200':
+          description: Extracted symptoms, diagnoses, and medications
+
+  # ── Appointments ──────────────────────────────────────────────────────────
+  /appointments:
+    post:
+      summary: Book a new appointment
+      tags: [Appointments]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [doctorId, scheduledAt, type]
+              properties:
+                doctorId:
+                  type: string
+                scheduledAt:
+                  type: string
+                  format: date-time
+                type:
+                  type: string
+                  enum: [video, in-person, chat]
+                chiefComplaint:
+                  type: string
+      responses:
+        '201':
+          description: Appointment booked
+    get:
+      summary: List appointments for current user
+      tags: [Appointments]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Array of appointments
+
+  /appointments/{id}:
+    get:
+      summary: Get appointment details
+      tags: [Appointments]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Appointment details
+
+  /appointments/{id}/status:
+    patch:
+      summary: Update appointment status
+      tags: [Appointments]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [confirmed, in-progress, completed, cancelled]
+      responses:
+        '200':
+          description: Status updated
+
+  /appointments/{id}/cancel:
+    patch:
+      summary: Cancel an appointment
+      tags: [Appointments]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Appointment cancelled
+
+  /appointments/{id}/room-token:
+    get:
+      summary: Get WebRTC consultation room token
+      tags: [Appointments]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Room token for video consultation
+
+  # ── Prescriptions ─────────────────────────────────────────────────────────
+  /prescriptions:
+    get:
+      summary: List all prescriptions (doctor/pharmacist/admin)
+      tags: [Prescriptions]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Array of prescriptions
+    post:
+      summary: Create a new prescription
+      tags: [Prescriptions]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [patientId, appointmentId, diagnosis, medications]
+              properties:
+                patientId:
+                  type: string
+                appointmentId:
+                  type: string
+                diagnosis:
+                  type: string
+                medications:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      dosage:
+                        type: string
+                      frequency:
+                        type: string
+                      duration:
+                        type: string
+                notes:
+                  type: string
+      responses:
+        '201':
+          description: Prescription created
+
+  /prescriptions/{id}:
+    get:
+      summary: Get prescription details
+      tags: [Prescriptions]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Prescription details
+
+  /prescriptions/patient/{patientId}:
+    get:
+      summary: List prescriptions for a patient
+      tags: [Prescriptions]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: patientId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Array of patient prescriptions
+
+  /prescriptions/{id}/status:
+    patch:
+      summary: Update prescription status
+      tags: [Prescriptions]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [active, dispensed, cancelled]
+      responses:
+        '200':
+          description: Status updated
+
+  # ── Pharmacy ──────────────────────────────────────────────────────────────
+  /pharmacy/medicines:
+    get:
+      summary: Search medicines catalog
+      tags: [Pharmacy]
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+          description: Search query
+      responses:
+        '200':
+          description: Array of medicines
+
+  /pharmacy/medicines/{id}:
+    get:
+      summary: Get medicine details
+      tags: [Pharmacy]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Medicine details
+
+  /pharmacy/pharmacies:
+    get:
+      summary: List all pharmacies
+      tags: [Pharmacy]
+      responses:
+        '200':
+          description: Array of pharmacies
+
+  /pharmacy/pharmacies/nearby:
+    get:
+      summary: Find nearby pharmacies by location
+      tags: [Pharmacy]
+      parameters:
+        - name: lat
+          in: query
+          schema:
+            type: number
+        - name: lng
+          in: query
+          schema:
+            type: number
+        - name: radius
+          in: query
+          schema:
+            type: number
+            default: 5000
+      responses:
+        '200':
+          description: Nearby pharmacies sorted by distance
+
+  /pharmacy/inventory:
+    get:
+      summary: Get pharmacy inventory
+      tags: [Pharmacy]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current inventory
+
+  /pharmacy/orders:
+    post:
+      summary: Place a pharmacy order
+      tags: [Pharmacy]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [prescriptionId, pharmacyId]
+              properties:
+                prescriptionId:
+                  type: string
+                pharmacyId:
+                  type: string
+                deliveryAddress:
+                  type: object
+                  properties:
+                    street:
+                      type: string
+                    lat:
+                      type: number
+                    lng:
+                      type: number
+      responses:
+        '201':
+          description: Order placed
+    get:
+      summary: List orders
+      tags: [Pharmacy]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Array of orders
+
+  /pharmacy/orders/{id}:
+    get:
+      summary: Get order details
+      tags: [Pharmacy]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Order details
+
+  /pharmacy/orders/{id}/track:
+    get:
+      summary: Track delivery status and drone route
+      tags: [Pharmacy]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Real-time delivery tracking with 3D waypoints
+
+  # ── Doctors ───────────────────────────────────────────────────────────────
+  /doctors:
+    get:
+      summary: List all doctors with specializations
+      tags: [Doctors]
+      parameters:
+        - name: specialization
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Array of doctors
+
+  /doctors/{id}:
+    get:
+      summary: Get doctor profile
+      tags: [Doctors]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Doctor profile
+    put:
+      summary: Update doctor profile
+      tags: [Doctors]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Profile updated
+
+  /doctors/{id}/slots:
+    get:
+      summary: Get available appointment slots
+      tags: [Doctors]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: date
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Available time slots
+
+  # ── Patients ──────────────────────────────────────────────────────────────
+  /patients/{id}/profile:
+    get:
+      summary: Get patient profile
+      tags: [Patients]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Patient profile with decrypted PHI
+    put:
+      summary: Update patient profile
+      tags: [Patients]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Profile updated
+
+  /patients/{id}/medical-history:
+    get:
+      summary: Get patient medical history
+      tags: [Patients]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Medical history with appointments and prescriptions
+
+  # ── Chat ──────────────────────────────────────────────────────────────────
+  /chat/medibot:
+    post:
+      summary: Chat with MediBot AI assistant
+      tags: [Chat]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message]
+              properties:
+                message:
+                  type: string
+      responses:
+        '200':
+          description: MediBot response
+
+  /chat/{roomId}:
+    get:
+      summary: Get paginated chat history for consultation
+      tags: [Chat]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: roomId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+      responses:
+        '200':
+          description: Chat messages
+
+  /chat/{roomId}/read:
+    post:
+      summary: Mark messages as read
+      tags: [Chat]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: roomId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Messages marked as read
+
+  # ── Lab ───────────────────────────────────────────────────────────────────
+  /lab/book:
+    post:
+      summary: Book a laboratory test
+      tags: [Lab]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [testType]
+              properties:
+                testType:
+                  type: string
+                scheduledDate:
+                  type: string
+                  format: date
+      responses:
+        '201':
+          description: Lab test booked
+
+  /lab/history:
+    get:
+      summary: Get lab test history
+      tags: [Lab]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Array of lab results
+
+  /lab/upload:
+    post:
+      summary: Upload lab report (admin/worker)
+      tags: [Lab]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                report:
+                  type: string
+                  format: binary
+                patientId:
+                  type: string
+                testType:
+                  type: string
+      responses:
+        '200':
+          description: Report uploaded
+
+  /lab/explain/{id}:
+    post:
+      summary: AI-powered lab report explanation
+      tags: [Lab]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Plain-language explanation of lab results
+
+  # ── Payments ──────────────────────────────────────────────────────────────
+  /payments/create-order:
+    post:
+      summary: Create a Razorpay payment order
+      tags: [Payments]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, appointmentId]
+              properties:
+                amount:
+                  type: number
+                appointmentId:
+                  type: string
+      responses:
+        '200':
+          description: Razorpay order created
+
+  /payments/verify:
+    post:
+      summary: Verify Razorpay payment signature
+      tags: [Payments]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [razorpay_order_id, razorpay_payment_id, razorpay_signature]
+              properties:
+                razorpay_order_id:
+                  type: string
+                razorpay_payment_id:
+                  type: string
+                razorpay_signature:
+                  type: string
+      responses:
+        '200':
+          description: Payment verified
+
+  # ── Riders ────────────────────────────────────────────────────────────────
+  /rider/queue:
+    get:
+      summary: Get available deliveries for rider
+      tags: [Rider]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Available delivery queue
+
+  /rider/accept:
+    post:
+      summary: Accept a delivery assignment
+      tags: [Rider]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Delivery accepted
+
+  /rider/update-status:
+    post:
+      summary: Update delivery status
+      tags: [Rider]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [deliveryId, status]
+              properties:
+                deliveryId:
+                  type: string
+                status:
+                  type: string
+                  enum: [picked-up, in-transit, delivered]
+      responses:
+        '200':
+          description: Status updated
+
+  /rider/confirm-otp:
+    post:
+      summary: Confirm delivery with OTP
+      tags: [Rider]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Delivery confirmed
+
+  /rider/stats:
+    get:
+      summary: Get rider delivery statistics
+      tags: [Rider]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Rider stats
+
+  /rider/route/{deliveryId}:
+    get:
+      summary: Get optimized delivery route
+      tags: [Rider]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: deliveryId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Route with 3D waypoints
+
+  # ── Admin ─────────────────────────────────────────────────────────────────
+  /admin/dashboard:
+    get:
+      summary: Get admin dashboard statistics
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Dashboard stats (users, appointments, revenue)
+
+  /admin/users:
+    get:
+      summary: List all users with pagination
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: role
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Paginated user list
+
+  /admin/users/{id}/status:
+    patch:
+      summary: Toggle user active/inactive status
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User status toggled
+
+  /admin/users/{id}/verify:
+    patch:
+      summary: Verify a user account (doctor license verification)
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User verified
+
+  /admin/audit-logs:
+    get:
+      summary: Get audit logs
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Array of audit log entries
+
+  # ── Providers ─────────────────────────────────────────────────────────────
+  /providers/nearby:
+    get:
+      summary: Find nearby healthcare providers
+      tags: [Providers]
+      parameters:
+        - name: lat
+          in: query
+          schema:
+            type: number
+        - name: lng
+          in: query
+          schema:
+            type: number
+      responses:
+        '200':
+          description: Nearby providers
+
+  /providers:
+    post:
+      summary: Register a new provider (admin only)
+      tags: [Providers]
+      security:
+        - bearerAuth: []
+      responses:
+        '201':
+          description: Provider created
+
+  # ── Companion ─────────────────────────────────────────────────────────────
+  /companion/insights:
+    get:
+      summary: Get AI healthcare companion insights
+      tags: [Companion]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Personalized health insights and habits
+
+  # ── Timeline ──────────────────────────────────────────────────────────────
+  /timeline:
+    get:
+      summary: Get patient care timeline
+      tags: [Timeline]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Chronological timeline of care events
+
+  # ── Data Rights (DPDP Act) ───────────────────────────────────────────────
+  /data-rights/export/{patientId}:
+    get:
+      summary: Export all patient data (DPDP Act compliance)
+      tags: [Data Rights]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: patientId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Complete patient data export
+
+  /data-rights/erase/{patientId}:
+    delete:
+      summary: Erase patient data (Right to Erasure - DPDP Act)
+      tags: [Data Rights]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: patientId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Patient data erased

@@ -202,6 +202,12 @@ def get_shap_explanation(X: np.ndarray, symptoms: list, predicted_class: int) ->
             # For the predicted class, get per-feature SHAP values
             if isinstance(shap_values, list):
                 class_shap = shap_values[predicted_class][0]  # (n_features,)
+            elif isinstance(shap_values, np.ndarray) and len(shap_values.shape) == 3:
+                # Shape could be (n_samples, n_features, n_classes) or (n_classes, n_samples, n_features)
+                if shap_values.shape[0] == X.shape[0]: # Axis 0 is samples
+                    class_shap = shap_values[0, :, predicted_class]
+                else: # Axis 0 is classes
+                    class_shap = shap_values[predicted_class, 0, :]
             else:
                 class_shap = shap_values[0]
 
@@ -292,7 +298,8 @@ def load_model() -> dict:
         _bundle = build_and_train()
     else:
         log.info(f"Loading model from {MODEL_PATH}")
-        _bundle = joblib.load(MODEL_PATH)
+        from model_loader import load_model_secure
+        _bundle = load_model_secure(MODEL_PATH)
         log.info(
             f"Model loaded — version: {_bundle['model_version']}, "
             f"features: {_bundle['feature_count']}, "
@@ -325,7 +332,7 @@ app = FastAPI(
 allowed_origin = os.getenv("ML_ALLOWED_ORIGIN", "http://localhost:5000")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[allowed_origin, "http://localhost:3000", "http://127.0.0.1:5500"],
+    allow_origins=[allowed_origin, "http://localhost:5050", "http://localhost:3000", "http://127.0.0.1:5500"],
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type"],
 )

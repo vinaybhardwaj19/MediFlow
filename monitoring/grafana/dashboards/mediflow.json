@@ -1,0 +1,250 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "title": "🟢 Request Rate (req/s)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 15, "gradientMode": "scheme" },
+          "unit": "reqps"
+        }
+      },
+      "targets": [
+        { "expr": "sum(rate(http_requests_total{job=\"node-server\"}[5m]))", "legendFormat": "Node.js", "refId": "A" },
+        { "expr": "sum(rate(http_requests_total{job=\"ml-engine\"}[5m]))", "legendFormat": "ML Engine", "refId": "B" }
+      ]
+    },
+    {
+      "title": "⏱️ Response Latency P95",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.3 },
+              { "color": "red", "value": 1.0 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=\"node-server\"}[5m])) by (le))", "legendFormat": "Node.js P95", "refId": "A" },
+        { "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=\"ml-engine\"}[5m])) by (le))", "legendFormat": "ML Engine P95", "refId": "B" }
+      ]
+    },
+    {
+      "title": "🔴 Error Rate (%)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "red", "mode": "fixed" },
+          "custom": { "lineWidth": 2, "fillOpacity": 20 },
+          "unit": "percentunit",
+          "max": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.01 },
+              { "color": "red", "value": 0.05 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        { "expr": "sum(rate(http_requests_total{status=~\"4..|5..\"}[5m])) / sum(rate(http_requests_total[5m]))", "legendFormat": "Error Rate", "refId": "A" }
+      ]
+    },
+    {
+      "title": "🩺 Triage Predictions",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "steps": [
+              { "color": "blue", "value": null },
+              { "color": "green", "value": 100 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        { "expr": "sum(increase(triage_predictions_total[24h]))", "legendFormat": "24h Predictions", "refId": "A" }
+      ]
+    },
+    {
+      "title": "🚨 Emergency Triages",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 10 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        { "expr": "sum(increase(triage_predictions_total{urgency=\"emergency\"}[24h]))", "legendFormat": "Emergencies 24h", "refId": "A" }
+      ]
+    },
+    {
+      "title": "👥 Active Connections",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 50 },
+              { "color": "red", "value": 100 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        { "expr": "sum(http_connections_active)", "legendFormat": "Active", "refId": "A" }
+      ]
+    },
+    {
+      "title": "🚀 ML Prediction Latency",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 200 },
+              { "color": "red", "value": 500 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum(rate(ml_predict_duration_seconds_bucket[5m])) by (le)) * 1000", "legendFormat": "P95 ms", "refId": "A" }
+      ]
+    },
+    {
+      "title": "💊 Pharmacy Orders",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 12 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "drawStyle": "bars", "fillOpacity": 40 }
+        }
+      },
+      "targets": [
+        { "expr": "sum(increase(pharmacy_orders_total[1h]))", "legendFormat": "Orders/hr", "refId": "A" }
+      ]
+    },
+    {
+      "title": "🏥 Appointments",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 12 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "drawStyle": "bars", "fillOpacity": 40 }
+        }
+      },
+      "targets": [
+        { "expr": "sum(increase(appointments_total[1h])) by (status)", "legendFormat": "{{status}}", "refId": "A" }
+      ]
+    },
+    {
+      "title": "🧠 LSTM Anomaly Detections",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 12 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 20 }
+        }
+      },
+      "targets": [
+        { "expr": "sum(increase(anomaly_detections_total[1h])) by (class)", "legendFormat": "{{class}}", "refId": "A" }
+      ]
+    },
+    {
+      "title": "📊 System Resources — Node.js",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "bytes"
+        }
+      },
+      "targets": [
+        { "expr": "process_resident_memory_bytes{job=\"node-server\"}", "legendFormat": "RSS Memory", "refId": "A" },
+        { "expr": "nodejs_heap_size_used_bytes{job=\"node-server\"}", "legendFormat": "Heap Used", "refId": "B" }
+      ]
+    },
+    {
+      "title": "📊 System Resources — ML Engine",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "bytes"
+        }
+      },
+      "targets": [
+        { "expr": "process_resident_memory_bytes{job=\"ml-engine\"}", "legendFormat": "RSS Memory", "refId": "A" }
+      ]
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": ["mediflow", "healthcare", "monitoring"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "MediFlow Platform Overview",
+  "uid": "mediflow-overview",
+  "version": 2
+}

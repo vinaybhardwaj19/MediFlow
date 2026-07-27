@@ -123,6 +123,22 @@ export function initPrescriptionPad() {
     <!-- Rx List -->
     <div id="rx-drug-list" style="margin-bottom:20px;min-height:60px;"></div>
 
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px;">
+      <div class="form-group">
+        <label class="form-label">Allotted Refills (Usage Limit)</label>
+        <input class="form-input" id="rx-usage-limit" type="number" value="1" min="1" max="10" />
+        <small style="color:var(--text-muted); font-size:0.65rem;">How many times patient can buy this set.</small>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Validity (Days)</label>
+        <select class="form-input" id="rx-validity">
+          <option value="7">7 Days (Acute)</option>
+          <option value="30" selected>30 Days (Standard)</option>
+          <option value="90">90 Days (Chronic)</option>
+        </select>
+      </div>
+    </div>
+
     <!-- Patient notes -->
     <div class="form-group" style="margin-bottom:12px;">
       <label class="form-label">Clinical Notes</label>
@@ -417,15 +433,32 @@ async function issueRx() {
   const icdCode = icdPanel?.dataset.selectedCode || '';
   const icdLabel = icdPanel?.dataset.selectedLabel || '';
 
+  const usageLimit = parseInt(document.getElementById('rx-usage-limit')?.value) || 1;
+  const validityDays = parseInt(document.getElementById('rx-validity')?.value) || 30;
+  const expiresAt = new Date(Date.now() + validityDays * 24 * 60 * 60 * 1000);
+
   try {
     const payload = {
+      id: 'rx_' + Date.now().toString(36),
+      patientName: 'John Doe',
       medications: _rxDrugs.map(d => ({ name: d.name, dosage: d.dose, frequency: d.frequency, duration: d.duration, instructions: d.note })),
       notes,
       diagnosis: icdLabel,
       icdCode,
+      maxUsageCount: usageLimit,
+      expiresAt,
+      issuedAt: new Date().toISOString(),
     };
     await api.post('/prescriptions', payload).catch(() => {});
-    toastSuccess('✅ Prescription Issued', `${_rxDrugs.length} medicine(s) prescribed successfully`);
+
+    // Save to local storage & dispatch event for Pharmacy & Rider pipeline sync
+    const existingRx = JSON.parse(localStorage.getItem('mf-prescriptions') || '[]');
+    existingRx.unshift(payload);
+    localStorage.setItem('mf-prescriptions', JSON.stringify(existingRx));
+    localStorage.setItem('mf-latest-rx', JSON.stringify(payload));
+    window.dispatchEvent(new CustomEvent('mf:prescription-issued', { detail: payload }));
+
+    toastSuccess('✅ Prescription Issued', `${_rxDrugs.length} medicine(s) prescribed & dispatched to Pharmacy Queue!`);
     _rxDrugs = [];
     renderRxList();
     document.getElementById('rx-notes').value = '';

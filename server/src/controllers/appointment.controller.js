@@ -72,7 +72,7 @@ exports.getAppointment = async (req, res) => {
 exports.updateAppointmentStatus = async (req, res) => {
   const { status } = req.body;
   const appt = await Appointment.findById(req.params.id)
-    .populate('patientId','firstName email')
+    .populate('patientId','firstName email phone')
     .populate('doctorId', 'firstName lastName');
   if (!appt) throw ApiError.notFound('Appointment not found');
 
@@ -96,6 +96,13 @@ exports.updateAppointmentStatus = async (req, res) => {
       type       : appt.type,
       appointmentId: appt._id.toString(),
     });
+
+    // Send SMS via Twilio
+    if (appt.patientId.phone) {
+      const { sendSMS } = require('../utils/twilio');
+      const smsMsg = `MediFlow: Your appointment with Dr. ${appt.doctorId.firstName} ${appt.doctorId.lastName} on ${new Date(appt.scheduledAt).toLocaleDateString()} at ${new Date(appt.scheduledAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} is CONFIRMED. WebRTC Room: ${roomId}`;
+      sendSMS(appt.patientId.phone, smsMsg).catch(err => console.error('[Appointment SMS] Error:', err.message));
+    }
   }
 
   const updated = await Appointment.findByIdAndUpdate(req.params.id, update, { new: true });

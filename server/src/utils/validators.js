@@ -39,10 +39,16 @@ const auth = {
     lastName : Joi.string().trim().min(1).max(60).required(),
     email    : Joi.string().email().lowercase().required(),
     password,
-    role     : Joi.string().valid('patient', 'doctor', 'pharmacist').default('patient'),
+    role     : Joi.string().valid('patient', 'doctor', 'pharmacist', 'admin', 'rider', 'worker').default('patient'),
     phone    : phone.optional(),
     dateOfBirth: Joi.date().max('now').iso().optional(),
     gender   : Joi.string().valid('male','female','other','prefer_not_to_say').optional(),
+    // Allow role-specific onboarding fields
+    licenseNumber: Joi.string().optional(),
+    specialization: Joi.string().optional(),
+    pharmacyId: Joi.string().optional(),
+    vehicleNumber: Joi.string().optional(),
+    drivingLicense: Joi.string().optional(),
   }).options({ allowUnknown: false }),
 
   login: Joi.object({
