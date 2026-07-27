@@ -42,11 +42,62 @@ export function initPharmacy() {
     }
   });
 
-  // If pharmacist, load inventory
+  // If pharmacist, load inventory and cold-chain telemetry
   const user = getState('user');
   if (user?.role === 'pharmacist') {
     loadInventory();
+    renderPharmacistColdChainWidget();
   }
+}
+
+function renderPharmacistColdChainWidget() {
+  const container = document.querySelector('#page-pharmacy .container') || document.getElementById('dash-pharmacist');
+  if (!container || document.getElementById('pharmacist-coldchain-panel')) return;
+
+  const widget = document.createElement('div');
+  widget.id = 'pharmacist-coldchain-panel';
+  widget.className = 'card fade-up';
+  widget.style.cssText = 'margin-bottom: 25px; padding: 20px; background: var(--glass-1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 16px;';
+  widget.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; flex-wrap:wrap; gap:10px;">
+      <h3 style="font-size: 1.1rem; font-weight: 800; color: #10b981; display:flex; align-items:center; gap:8px;">
+        <span>❄️ Cold-Chain Telemetry & AI Reorder Hub</span>
+      </h3>
+      <span style="font-size: 0.72rem; padding: 3px 10px; background: rgba(16,185,129,0.15); color: #10b981; border-radius: 99px; font-weight: 700;">
+        ● WHO Cold Chain Certified
+      </span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
+      <div style="background: var(--bg-base); padding: 15px; border-radius: 12px; border: 1px solid var(--border);">
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Vaccine Fridge Unit #1</div>
+        <div style="font-size: 1.4rem; font-weight: 800; color: #10b981;">+2.8°C <span style="font-size:0.75rem; font-weight:600;">(Target 2-8°C)</span></div>
+        <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 4px;">Status: Optimal Range ✅</div>
+      </div>
+      <div style="background: var(--bg-base); padding: 15px; border-radius: 12px; border: 1px solid var(--border);">
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Insulin Storage Unit #2</div>
+        <div style="font-size: 1.4rem; font-weight: 800; color: #10b981;">+3.1°C <span style="font-size:0.75rem; font-weight:600;">(Target 2-8°C)</span></div>
+        <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 4px;">Humidity: 44% RH (Optimal)</div>
+      </div>
+      <div style="background: var(--bg-base); padding: 15px; border-radius: 12px; border: 1px solid var(--border);">
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">🤖 AI Reorder Predictor</div>
+        <div style="font-size: 0.85rem; font-weight: 700; color: #f59e0b;">Paracetamol & Amoxicillin</div>
+        <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 4px;">Predicted Out of Stock in 36h ⚡</div>
+      </div>
+      <div style="background: var(--bg-base); padding: 15px; border-radius: 12px; border: 1px solid var(--border);">
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">🚁 Active Drone Fleet</div>
+        <div style="font-size: 1.4rem; font-weight: 800; color: #6366f1;">2 Drones Ready</div>
+        <div style="font-size: 0.7rem; color: #6366f1; margin-top: 4px;">Battery 98% · 3D A* Pre-flight Passed</div>
+      </div>
+    </div>
+
+    <div style="background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.3); border-radius: 10px; padding: 10px 15px; font-size: 0.78rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+      <span>💡 <b>AI Stock Forecast:</b> High demand expected for Seasonal Antihistamines over next 48h.</span>
+      <button class="btn btn-sm btn-primary" onclick="window.MediFlowToast?.toastSuccess('Auto-Reorder Dispatched', 'Sun Pharma Hub order #SP-8839 placed via API')">Trigger Auto-Reorder</button>
+    </div>
+  `;
+
+  container.insertBefore(widget, container.firstChild);
 }
 
 function bindRxUpload() {

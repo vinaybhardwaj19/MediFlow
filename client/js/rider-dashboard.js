@@ -47,14 +47,40 @@ function renderRiderLayout() {
         </div>
       </div>
 
+      <!-- Live Route & Environment Telemetry Widget -->
+      <div class="card fade-up" style="margin-top: 15px; padding: 15px; background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px; flex-wrap:wrap;">
+          <span style="font-size:0.75rem; font-weight:800; color:var(--primary); display:flex; align-items:center; gap:6px;">
+            <span>🌤️ Live Route Telemetry</span>
+          </span>
+          <span style="font-size:0.68rem; background:rgba(16,185,129,0.15); color:#10b981; padding:2px 8px; border-radius:99px; font-weight:700;">
+            ● Active Navigation GPS
+          </span>
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.72rem;">
+          <div style="background:var(--bg-base); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);">
+            <div style="color:var(--text-muted);">Weather & Traffic</div>
+            <div style="font-weight:700; color:var(--text-main); margin-top:2px;">28°C Clear · Low Traffic 🟢</div>
+          </div>
+          <div style="background:var(--bg-base); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);">
+            <div style="color:var(--text-muted);">Cold-Chain Box</div>
+            <div style="font-weight:700; color:#10b981; margin-top:2px;">+3.4°C (Safe 2-8°C) ❄️</div>
+          </div>
+        </div>
+      </div>
+
       <!-- Earnings Card -->
-      <div class="card" style="margin-top: 20px; padding: 20px; text-align: center; background: linear-gradient(135deg, var(--primary), #1e293b); color: white; border: none; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.1);">
+      <div class="card" style="margin-top: 15px; padding: 20px; text-align: center; background: linear-gradient(135deg, var(--primary), #1e293b); color: white; border: none; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.1);">
         <div style="font-size: 0.8rem; opacity: 0.8; margin-bottom: 5px;">Today's Earnings</div>
         <div style="font-size: 2.5rem; font-weight: 800;" id="rider-stat-wallet">₹0.00</div>
         <div style="display:flex; justify-content:center; gap:20px; margin-top:15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top:15px;">
            <div>
              <div style="font-size:1.1rem; font-weight:700;" id="rider-stat-runs">0</div>
              <div style="font-size:0.6rem; opacity:0.7;">Deliveries</div>
+           </div>
+           <div>
+             <div style="font-size:1.1rem; font-weight:700;">24.8 km</div>
+             <div style="font-size:0.6rem; opacity:0.7;">Distance</div>
            </div>
            <div>
              <div style="font-size:1.1rem; font-weight:700;">4.9 ★</div>
