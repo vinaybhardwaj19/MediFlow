@@ -132,6 +132,8 @@ app.use('/api/v1/data-rights',   dataRightsRoutes);
 // ─── Serve Client SPA (must be AFTER all API routes) ─────────────────────────
 // This lets the frontend load from http://localhost:5000 without file:// issues.
 const clientPath = path.join(__dirname, '../../client');
+const docsPath = path.join(__dirname, '../../docs');
+app.use('/docs', express.static(docsPath));
 app.use(express.static(clientPath));
 
 // SPA fallback — serve index.html for any non-API route
