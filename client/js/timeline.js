@@ -79,7 +79,7 @@ function renderTimelineEvents(events) {
     const badgeClass = isCritical ? 'badge-urgent' : 'badge-routine';
 
     return `
-      <div class="timeline-event-card fade-up" style="position:relative;margin-bottom:24px;">
+      <div class="timeline-event-card fade-up" style="position:relative;margin-bottom:24px; cursor:pointer;" onclick="window.handleTimelineAction('${e.type}', '${e.id}')">
         <!-- Timeline node marker -->
         <div style="position:absolute;left:-44px;top:4px;width:28px;height:28px;border-radius:50%;background:#0f172a;border:2px solid var(--primary);display:flex;align-items:center;justify-content:center;font-size:1rem;z-index:2;box-shadow:0 0 8px rgba(99,102,241,0.25);">
           ${e.icon || '🔔'}
@@ -94,8 +94,27 @@ function renderTimelineEvents(events) {
             <span class="badge ${badgeClass}" style="text-transform:uppercase;font-size:.65rem;padding:3px 6px;">${e.badge}</span>
           </div>
           <p style="font-size:.8rem;color:var(--text-secondary);margin:0;line-height:1.4;">${e.description}</p>
+          <div style="margin-top:10px; font-size:0.65rem; color:var(--primary); font-weight:700; display:flex; align-items:center; gap:4px;">
+            <span>VIEW DETAILS</span>
+            <span>➜</span>
+          </div>
         </div>
       </div>
     `;
   }).join('');
 }
+
+window.handleTimelineAction = (type, id) => {
+  if (type === 'appointment') {
+    const sidebarItem = document.querySelector('.sidebar-item[data-section="appointments"]');
+    if (sidebarItem) sidebarItem.click();
+  } else if (type === 'order') {
+    const sidebarItem = document.querySelector('.sidebar-item[data-section="orders"]');
+    if (sidebarItem) sidebarItem.click();
+  } else if (type === 'lab_report') {
+    const sidebarItem = document.querySelector('.sidebar-item[data-section="labs"]');
+    if (sidebarItem) sidebarItem.click();
+  } else if (type === 'triage') {
+    navigate('triage');
+  }
+};

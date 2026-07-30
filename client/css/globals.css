@@ -1770,6 +1770,98 @@ body, #navbar, .card, .sidebar, .form-input, .modal-box, .btn,
   }
 }
 
+/* ── Mobile & Tablet UX Improvements ──────────────────────────────────── */
+.m3-role-scroll-container {
+  background: var(--glass-2);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  overflow-x: auto;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+  position: sticky;
+  top: 64px;
+  z-index: 90;
+}
+.m3-role-scroll-container::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-menu-btn {
+  display: none;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  color: var(--text-main);
+  font-size: 1.3rem;
+  padding: 4px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+@media (max-width: 850px) {
+  .mobile-menu-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .nav-links {
+    display: none;
+    flex-direction: column;
+    width: 100%;
+    background: rgba(15, 23, 42, 0.96);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 12px;
+    margin-top: 10px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+    gap: 8px;
+  }
+  .nav-links.open {
+    display: flex !important;
+  }
+  .nav-links .nav-link {
+    display: flex !important;
+    padding: 10px 14px;
+    font-size: 0.92rem;
+    border-radius: 10px;
+    width: 100%;
+  }
+  /* Modals on Mobile & Tablet */
+  .modal-card, .checkout-modal-content {
+    max-width: 94vw !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+    padding: 18px !important;
+    border-radius: 18px !important;
+  }
+  /* Touch target sizes & scrollable sidebar */
+  .dash-pro-sidebar {
+    display: flex !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    gap: 8px !important;
+    padding: 8px !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  .dash-pro-sidebar::-webkit-scrollbar {
+    display: none;
+  }
+  .sidebar-item {
+    flex: 0 0 auto !important;
+    padding: 8px 14px !important;
+    font-size: 0.8rem !important;
+  }
+  .sidebar-item .icon {
+    display: inline-block !important;
+  }
+}
+
 
 
 

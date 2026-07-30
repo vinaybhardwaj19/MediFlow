@@ -448,7 +448,20 @@ async def predict(req: TriageRequest):
 
     # ── 6. SHAP explanation ───────────────────────────────────────────────────
     explanation = None
-    if not is_zero_vector:
+    if forced_emergency:
+        explanation = SHAPExplanation(
+            topFeatures=[{
+                "symptom": kw,
+                "shap_value": 1.0,
+                "direction": "increases",
+                "present": True,
+            } for kw in matched_emergency],
+            baseValue=0.0,
+            outputValue=1.0,
+            method="rule_based_override",
+            explanation=f"Urgency overridden to EMERGENCY due to critical symptoms: {', '.join(matched_emergency)}.",
+        )
+    elif not is_zero_vector:
         explanation = get_shap_explanation(X, symptoms, predicted_class)
 
     processing_ms = round((time.perf_counter() - t0) * 1000, 2)

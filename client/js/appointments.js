@@ -22,10 +22,17 @@ const TIME_SLOTS = [
   '17:00','17:30',
 ];
 
-export function initAppointmentBooking() {
+let _selectedSpecialty = null, _selectedDate = null, _selectedTime = null, _initialReasonText = '';
+
+export function initAppointmentBooking(initialSpecialty = null, initialReason = null) {
   const container = document.getElementById('booking-widget');
   if (!container) return;
+  if (initialReason) _initialReasonText = initialReason;
   renderBookingWidget(container);
+  if (initialSpecialty) {
+    _selectedSpecialty = initialSpecialty;
+    showDoctorCatalogSelection(container);
+  }
 }
 
 function renderBookingWidget(container) {
@@ -47,10 +54,10 @@ function renderBookingWidget(container) {
     <div id="booking-panel" style="margin-top:28px;"></div>
   `;
 
-  showSpecialtySelection(container);
+  if (!_selectedSpecialty) {
+    showSpecialtySelection(container);
+  }
 }
-
-let _selectedSpecialty = null, _selectedDate = null, _selectedTime = null;
 
 const DEMO_DOCTORS = [
   { id: 'doc1', name: 'Dr. Sarah Jenkins', specialty: 'cardiology', degrees: 'MD, DM (Cardiology)', exp: '12 Yrs Exp', rating: '4.9', reviews: 184, fee: 800, pincode: '560038', hospital: 'Apollo Heart Institute', image: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=200&q=80' },
@@ -254,7 +261,7 @@ function showConfirmation(container) {
 
     <div class="form-group" style="margin-top:20px;">
       <label class="form-label">Reason for Visit</label>
-      <textarea class="form-input" id="booking-reason" rows="3" placeholder="Briefly describe your symptoms or concerns..." style="resize:none;"></textarea>
+      <textarea class="form-input" id="booking-reason" rows="3" placeholder="Briefly describe your symptoms or concerns..." style="resize:none;">${_initialReasonText ? `AI Triage Symptoms: ${_initialReasonText}` : ''}</textarea>
     </div>
 
     <div style="display:flex;gap:12px;margin-top:20px;">

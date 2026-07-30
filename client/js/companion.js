@@ -5,21 +5,22 @@
 
 import * as api from './api.js';
 import { toastSuccess, toastError } from './toast.js';
+import { getSecureStorage, setSecureStorage } from './store.js';
 
 let _yieldInterval = null;
 
 // Habit tracking state
-let _habits = JSON.parse(localStorage.getItem('mf-habits')) || {
+let _habits = getSecureStorage('mf-habits', {
   waterIntakeMl: 1500,
   waterGoalMl: 3000,
   sleepHours: 6.5,
   sleepGoalHours: 8,
   exerciseMins: 20,
   exerciseGoalMins: 45
-};
+});
 
 // Simulated Solana Wallet State
-let _solWallet = JSON.parse(localStorage.getItem('mf-sol-wallet')) || {
+let _solWallet = getSecureStorage('mf-sol-wallet', {
   address: '5oL6qTrXzY1MvN4vPQC9e9aV8a5b4fcdDilithium',
   balance: 12.45,
   staked: 5.00,
@@ -29,11 +30,11 @@ let _solWallet = JSON.parse(localStorage.getItem('mf-sol-wallet')) || {
     { tx: '0x5e8bc38d97be23f4bca998fde2931a78', desc: 'Staked 5.00 SOL: Diagnostic Priority Routing', val: '-5.00 SOL', status: 'Active', time: '1 day ago' },
     { tx: '0x1c29d9ab40de83a7c6e6a6dfa4282eb1', desc: 'Minted 0.20 SOL: Symptom Assessment Log', val: '+0.20 SOL', status: 'Confirmed', time: '2 days ago' }
   ]
-};
+});
 
 function saveToLocalStorage() {
-  localStorage.setItem('mf-habits', JSON.stringify(_habits));
-  localStorage.setItem('mf-sol-wallet', JSON.stringify(_solWallet));
+  setSecureStorage('mf-habits', _habits);
+  setSecureStorage('mf-sol-wallet', _solWallet);
 }
 
 // Model Preset Configurations

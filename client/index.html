@@ -11,16 +11,37 @@
   <link rel="manifest" href="/manifest.json" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏥</text></svg>" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <!-- Mapbox GL JS -->
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css" rel="stylesheet">
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js"></script>
   <link rel="stylesheet" href="css/globals.css" />
   <link rel="stylesheet" href="css/2036-spatial.css" />
   <link rel="stylesheet" href="css/theme.css" />
   <link rel="stylesheet" href="css/ai-hub.css" />
+
+  <!-- MediaPipe AI for Pro Biometrics -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils"></script>
+
+  <!-- Three.js for 3D Digital Twin -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <!-- DOMPurify for XSS Protection -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+
 </head>
 <body>
 
 <!-- ── Navigation ─────────────────────────────────────────────────────────── -->
 <nav id="navbar">
   <div class="nav-logo">🏥 MediFlow</div>
+  <div id="acting-as-banner" class="hidden" style="background:var(--accent); color:white; padding:2px 12px; border-radius:99px; font-size:0.7rem; font-weight:800; display:flex; align-items:center; gap:8px; margin-left:15px;">
+    <span>ACTING FOR: <span id="acting-as-name">...</span></span>
+    <button id="btn-clear-context" style="background:none; border:none; color:white; cursor:pointer; font-weight:900;">✕</button>
+  </div>
+  <button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Toggle Navigation">☰</button>
   <div class="nav-links" id="nav-links">
     <a class="nav-link" data-page="home" data-i18n="nav-home" href="#home">Home</a>
     <a class="nav-link" data-page="dashboard" data-i18n="nav-dashboard" href="#dashboard">Dashboard</a>
@@ -33,28 +54,12 @@
     </button>
     <button class="btn btn-outline btn-sm" id="lang-toggle-btn" title="Switch language">🌐 EN</button>
     <button class="btn btn-outline btn-sm" id="voice-nav-btn" title="Voice Navigation">🎤</button>
+    <button class="btn btn-outline btn-sm" id="btn-inclusive-toggle" title="Simple Mode for All">🌟 Simple Mode</button>
     <button class="btn btn-danger btn-sm" id="sos-btn" title="Emergency SOS" style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:#ef4444;">🆘 SOS</button>
     <button class="btn btn-primary btn-sm" id="nav-auth-btn" data-i18n="nav-signin">Sign In</button>
     <button class="btn btn-outline btn-sm hidden" id="nav-logout-btn" data-i18n="nav-signout">Sign Out</button>
   </div>
 </nav>
-
-<!-- ── Google Material Design 3 Role Switcher Bar ────────────────────────── -->
-<div id="m3-role-bar" style="background:var(--glass-2); border-bottom:1px solid var(--border); padding:8px 16px; display:flex; align-items:center; justify-content:center; gap:8px; font-size:0.78rem; flex-wrap:wrap; position:sticky; top:64px; z-index:90;">
-  <span style="font-weight:700; color:var(--primary); display:flex; align-items:center; gap:4px; margin-right:4px;">
-    <span>🌐 Role Switcher:</span>
-  </span>
-  <button class="btn btn-sm btn-primary m3-role-pill" data-role="patient" style="border-radius:99px; padding:3px 12px; font-size:0.72rem; font-weight:700;">👤 Patient</button>
-  <button class="btn btn-sm btn-outline m3-role-pill" data-role="doctor" style="border-radius:99px; padding:3px 12px; font-size:0.72rem; font-weight:700;">🩺 Doctor (8K Tele-Consult)</button>
-  <button class="btn btn-sm btn-outline m3-role-pill" data-role="pharmacist" style="border-radius:99px; padding:3px 12px; font-size:0.72rem; font-weight:700;">💊 Pharmacist</button>
-  <button class="btn btn-sm btn-outline m3-role-pill" data-role="rider" style="border-radius:99px; padding:3px 12px; font-size:0.72rem; font-weight:700;">🏍️ Delivery Rider</button>
-  <button class="btn btn-sm btn-outline m3-role-pill" data-role="lab" style="border-radius:99px; padding:3px 12px; font-size:0.72rem; font-weight:700;">🧪 Lab Tech</button>
-  <button class="btn btn-sm btn-outline m3-role-pill" data-role="admin" style="border-radius:99px; padding:3px 12px; font-size:0.72rem; font-weight:700;">🛡️ Admin</button>
-  <button class="btn btn-sm" id="btn-open-ppt-bar" style="border-radius:99px; padding:3px 12px; font-size:0.72rem; font-weight:800; background:linear-gradient(135deg,#6366f1,#ec4899); color:white; border:none; cursor:pointer;">📽️ Tech Slide Deck (5-Page PPT)</button>
-</div>
-
-<!-- ── Toast container ────────────────────────────────────────────────────── -->
-<div id="toast-container"></div>
 
 <!-- ── Hidden Sensing Canvas (PPG / Biometrics) ─────────────────────────── -->
 <canvas id="sensing-canvas" width="128" height="128" style="display:none;"></canvas>
@@ -78,7 +83,7 @@
 <!-- ══════════════════════════════════════════════════════════════════════════
      PAGE: LANDING
      ══════════════════════════════════════════════════════════════════════ -->
-<div id="page-home" class="page">
+<div id="page-home" class="page hidden">
   <section class="hero">
     <!-- Particle Canvas Background -->
     <canvas id="hero-particles"></canvas>
@@ -188,7 +193,7 @@
 
       <!-- ── Sidebar ──────────────────────────────────────────────────────── -->
       <aside class="sidebar dash-pro-sidebar">
-        <div id="user-avatar" style="text-align:center;padding:24px 0;border-bottom:1px solid var(--border);margin-bottom:8px;">
+        <div id="user-avatar" style="text-align:center;padding:24px 0;margin-bottom:8px;">
           <div style="width:72px; height:72px; border-radius:50%; background:var(--bg-base); margin:0 auto; display:flex; align-items:center; justify-content:center; overflow:hidden; border:2px solid var(--primary); box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
              <!-- Image injected by JS -->
           </div>
@@ -197,54 +202,81 @@
         </div>
 
         <!-- Navigation Groups -->
-        <div class="sidebar-group-label" style="padding:10px 24px; font-size:0.6rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px;">Main Hub</div>
-        <div class="sidebar-item active" data-section="overview" id="side-overview"><span style="margin-right:12px; font-size:1.1rem;">📊</span>Analytics Hub</div>
+        <div class="sidebar-group-label">Main Hub</div>
+        <div class="sidebar-item active" data-section="overview" id="side-overview"><span class="icon">📊</span>Analytics Hub</div>
 
         <div id="nav-group-medical">
-          <div class="sidebar-group-label" style="padding:10px 24px; font-size:0.6rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-top:10px;">Clinical Services</div>
-          <div class="sidebar-item" data-section="queue" id="side-queue"><span style="margin-right:12px; font-size:1.1rem;">👨‍⚕️</span>Patient Queue</div>
-          <div class="sidebar-item" data-section="triage" id="side-triage"><span style="margin-right:12px; font-size:1.1rem;">🧠</span>AI Triage & Diagnostics</div>
-          <div class="sidebar-item" data-section="vitals" id="side-vitals"><span style="margin-right:12px; font-size:1.1rem;">❤️</span>Biometric Feed</div>
-          <div class="sidebar-item" data-section="prescriptions" id="side-prescriptions"><span style="margin-right:12px; font-size:1.1rem;">📋</span>Digital Prescription Pad</div>
-          <div class="sidebar-item" data-section="doc-comm" id="side-doc-comm"><span style="margin-right:12px; font-size:1.1rem;">💬</span>Pharmacist Channel</div>
-          <div class="sidebar-item" data-section="companion" id="side-companion"><span style="margin-right:12px; font-size:1.1rem;">🤖</span>GPT-6 Companion</div>
+          <div class="sidebar-group-label">Clinical Services</div>
+          <div class="sidebar-item" data-section="queue" id="side-queue"><span class="icon">👨‍⚕️</span>Patient Queue</div>
+          <div class="sidebar-item" data-section="triage" id="side-triage"><span class="icon">🧠</span>AI Triage</div>
+          <div class="sidebar-item" data-section="vitals" id="side-vitals"><span class="icon">❤️</span>Biometric Feed</div>
+          <div class="sidebar-item" data-section="prescriptions" id="side-prescriptions"><span class="icon">📋</span>Prescriptions</div>
+          <div class="sidebar-item" data-section="doc-comm" id="side-doc-comm"><span class="icon">💬</span>Doctor Channel</div>
+          <div class="sidebar-item" data-section="companion" id="side-companion"><span class="icon">🤖</span>AI Companion</div>
         </div>
 
         <div id="nav-group-logistics">
-          <div class="sidebar-group-label" style="padding:10px 24px; font-size:0.6rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-top:10px;">Operations & Logistics</div>
-          <div class="sidebar-item" data-section="inventory" id="side-inventory"><span style="margin-right:12px; font-size:1.1rem;">💊</span>Smart Inventory</div>
-          <div class="sidebar-item" data-section="incoming-prescriptions" id="side-incoming-prescriptions"><span style="margin-right:12px; font-size:1.1rem;">📜</span>Rx Fulfillment Queue</div>
-          <div class="sidebar-item" data-section="pharm-comm" id="side-pharm-comm"><span style="margin-right:12px; font-size:1.1rem;">📞</span>Patient & Rider Hub</div>
-          <div class="sidebar-item" data-section="rider" id="side-rider"><span style="margin-right:12px; font-size:1.1rem;">🏍️</span>Logistics Hub</div>
-          <div class="sidebar-item" data-section="rider-comm" id="side-rider-comm"><span style="margin-right:12px; font-size:1.1rem;">💬</span>Delivery Connect</div>
-          <div class="sidebar-item" data-section="drone" id="side-drone"><span style="margin-right:12px; font-size:1.1rem;">🚁</span>Drone Network</div>
+          <div class="sidebar-group-label">Logistics</div>
+          <div class="sidebar-item" data-section="inventory" id="side-inventory"><span class="icon">💊</span>Inventory</div>
+          <div class="sidebar-item" data-section="incoming-prescriptions" id="side-incoming-prescriptions"><span class="icon">📜</span>Rx Queue</div>
+          <div class="sidebar-item" data-section="pharm-comm" id="side-pharm-comm"><span class="icon">📞</span>Rider Hub</div>
+          <div class="sidebar-item" data-section="rider" id="side-rider"><span class="icon">🏍️</span>Logistics</div>
+          <div class="sidebar-item" data-section="drone" id="side-drone"><span class="icon">🚁</span>Drone Fleet</div>
         </div>
 
         <div id="nav-group-user">
-          <div class="sidebar-group-label" style="padding:10px 24px; font-size:0.6rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-top:10px;">Personal</div>
-          <div class="sidebar-item" data-section="marketplace" id="side-marketplace"><span style="margin-right:12px; font-size:1.1rem;">🛒</span>E-Pharmacy</div>
-          <div class="sidebar-item" data-section="appointments" id="side-appointments"><span style="margin-right:12px; font-size:1.1rem;">📅</span>Bookings</div>
-          <div class="sidebar-item" data-section="orders" id="side-orders"><span style="margin-right:12px; font-size:1.1rem;">📦</span>Med Orders</div>
-          <div class="sidebar-item" data-section="location" id="side-location"><span style="margin-right:12px; font-size:1.1rem;">📍</span>Hospital & Pharmacy Map</div>
-          <div class="sidebar-item" data-section="labs" id="side-labs"><span style="margin-right:12px; font-size:1.1rem;">🧪</span>Diagnostic Labs</div>
-          <div class="sidebar-item" data-section="timeline" id="side-timeline"><span style="margin-right:12px; font-size:1.1rem;">📜</span>Medical Timeline</div>
-          <div class="sidebar-item" data-section="profile" id="side-profile"><span style="margin-right:12px; font-size:1.1rem;">⚙️</span>Account</div>
+          <div class="sidebar-group-label">Personal</div>
+          <div class="sidebar-item" data-section="family" id="side-family"><span class="icon">👨‍👩‍👧‍👦</span>Family Hub</div>
+          <div class="sidebar-item" data-section="marketplace" id="side-marketplace"><span class="icon">🛒</span>Pharmacy</div>
+          <div class="sidebar-item" data-section="appointments" id="side-appointments"><span class="icon">📅</span>Bookings</div>
+          <div class="sidebar-item" data-section="orders" id="side-orders"><span class="icon">📦</span>Orders</div>
+          <div class="sidebar-item" data-section="location" id="side-location"><span class="icon">📍</span>Map</div>
+          <div class="sidebar-item" data-section="labs" id="side-labs"><span class="icon">🧪</span>Labs</div>
+          <div class="sidebar-item" data-section="timeline" id="side-timeline"><span class="icon">📜</span>Timeline</div>
+          <div class="sidebar-item" data-section="profile" id="side-profile"><span class="icon">⚙️</span>Account</div>
         </div>
 
         <div id="nav-group-admin" style="margin-top:auto;">
-           <div class="sidebar-item" data-section="admin" id="side-admin" style="background:rgba(99,102,241,0.05); color:var(--primary); font-weight:700;"><span style="margin-right:12px; font-size:1.1rem;">🛡️</span>Enterprise Panel</div>
-           <div class="sidebar-item" data-section="identity" id="side-identity"><span style="margin-right:12px; font-size:1.1rem;">🔐</span>PQC Identity (DIDs)</div>
+           <div class="sidebar-item" data-section="admin" id="side-admin"><span class="icon">🛡️</span>Admin Panel</div>
+           <div class="sidebar-item" data-section="identity" id="side-identity"><span class="icon">🔐</span>PQC Identity</div>
         </div>
 
-        <div style="padding:16px; border-top:1px solid var(--border);">
-            <button class="xr-toggle-btn" id="xr-toggle-btn" style="width:100%;justify-content:center; height:38px; font-size:0.75rem; border-radius:12px;">
+        <div style="padding:16px; border-top:1px solid var(--border); display:flex; flex-direction:column; gap:10px;">
+          <button class="xr-toggle-btn" id="xr-toggle-btn" style="width:100%;justify-content:center; height:38px; font-size:0.75rem; border-radius:12px;">
             📊 Health Report
           </button>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:0 8px;">
+            <span style="font-size:0.65rem; font-weight:700; color:var(--text-muted);">DESKTOP VIEW</span>
+            <label class="switch" style="transform: scale(0.8);">
+              <input type="checkbox" id="chk-force-desktop">
+              <span class="slider round"></span>
+            </label>
+          </div>
         </div>
       </aside>
 
-      <!-- ── Vitals Panel (top right) ─────────────────────────────────────── -->
-      <section id="dash-vitals" class="dash-pro-vitals">
+      <!-- ── GROUNDBREAKING COMMAND CENTER (Main Content) ────────────────── -->
+      <main class="dash-pro-main no-scrollbar">
+
+        <!-- ✦ FOCUS HUB: Next Action Engine (11/10 Standard) ✦ -->
+        <div id="dashboard-focus-hub" class="focus-hub reveal">
+           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:24px;">
+              <div style="flex:1; min-width:300px;">
+                 <h1 id="focus-title" style="font-size:2rem; margin-bottom:8px; line-height:1.2;">Welcome back</h1>
+                 <p id="focus-sub" style="opacity:0.9; font-size:0.95rem; font-weight:500;">AI is currently monitoring 8 active health signals.</p>
+                 <div style="display:flex; gap:12px; margin-top:24px;" id="focus-actions">
+                    <!-- Dynamic CTA Buttons injected by JS -->
+                 </div>
+              </div>
+              <div id="focus-visual" style="width:140px; height:140px; background:rgba(255,255,255,0.15); border-radius:35px; display:flex; align-items:center; justify-content:center; font-size:4.5rem; backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.2);">
+                 🏥
+              </div>
+           </div>
+        </div>
+
+        <!-- ── Vitals Panel ──────────────────────────────────────────────── -->
+        <section id="dash-vitals" class="dash-pro-vitals">
         <div class="vitals-panel">
           <div class="vitals-header" style="flex-wrap:wrap;gap:12px;">
             <div class="vitals-title">
@@ -296,6 +328,42 @@
                 <div style="font-size:.6rem;color:var(--text-muted);">WEBCAM PPG LIVE</div>
                 <div id="ppg-quality" style="font-size:.7rem;color:var(--success);">QUAL: GOOD</div>
              </div>
+          </div>
+
+          <!-- Environmental Pulse Widget -->
+          <div id="env-pulse-widget" style="background:rgba(99,102,241,0.05); border:1px solid rgba(99,102,241,0.2); border-radius:12px; padding:15px; margin-bottom:20px; display:flex; align-items:center; gap:20px; flex-wrap:wrap;">
+             <div style="display:flex; align-items:center; gap:10px;">
+                <span id="env-weather-icon" style="font-size:1.5rem;">☀️</span>
+                <div>
+                   <div style="font-size:0.65rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Local Weather</div>
+                   <div id="env-temp-val" style="font-weight:800; font-size:1rem;">24°C</div>
+                </div>
+             </div>
+             <div style="width:1px; height:30px; background:var(--border);"></div>
+             <div style="flex:1; min-width:150px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                   <div style="font-size:0.65rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Air Quality Index (AQI)</div>
+                   <span id="env-aqi-label" class="badge" style="font-size:0.55rem; padding:2px 6px; background:#10b981; color:white;">GOOD</span>
+                </div>
+                <div style="height:6px; background:rgba(0,0,0,0.2); border-radius:99px; overflow:hidden;">
+                   <div id="env-aqi-bar" style="width:20%; height:100%; background:#10b981; transition:all 0.5s;"></div>
+                </div>
+             </div>
+             <div id="env-alert-msg" style="font-size:0.7rem; color:var(--text-secondary); width:100%; margin-top:5px; display:none;">
+                ⚠️ <b>High Pollution Alert:</b> Sensitive groups should wear masks today.
+             </div>
+          </div>
+
+          <!-- Multi-Waveform Rack (Medical Grade) -->
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:20px;">
+            <div style="background:rgba(0,0,0,0.2); border-radius:12px; padding:12px; border:1px solid rgba(244,63,94,0.2);">
+               <div style="font-size:0.6rem; color:var(--vital-hr); font-weight:800; margin-bottom:5px; text-transform:uppercase;">Lead II - ECG (Live)</div>
+               <canvas id="ecg-canvas" style="width:100%; height:60px;"></canvas>
+            </div>
+            <div style="background:rgba(0,0,0,0.2); border-radius:12px; padding:12px; border:1px solid rgba(59,130,246,0.2);">
+               <div style="font-size:0.6rem; color:var(--vital-spo2); font-weight:800; margin-bottom:5px; text-transform:uppercase;">Plethysmogram - SpO2</div>
+               <canvas id="spo2-canvas" style="width:100%; height:60px;"></canvas>
+            </div>
           </div>
 
           <div class="vitals-grid">
@@ -431,18 +499,54 @@
             </div>
           </section>
 
-          <!-- Other sections -->
+          <!-- Appointments Section -->
           <section id="dash-appointments" class="hidden">
-            <h2 class="section-title">Appointments</h2>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+              <div>
+                <h2 class="section-title" style="margin:0;">📅 Appointments &amp; Specialist Booking</h2>
+                <p class="section-sub" style="margin:4px 0 0 0;">Book tele-consultations with verified top doctors.</p>
+              </div>
+              <button class="btn btn-primary btn-sm" id="btn-trigger-booking" style="font-weight:700;">+ Book New Appointment</button>
+            </div>
+            
+            <div id="booking-widget" class="card" style="padding:20px; margin-bottom:28px; border:1px solid var(--primary);"></div>
+            
+            <h3 style="font-size:1.05rem; font-weight:700; margin-bottom:12px;">Your Booked Consultations</h3>
             <div id="appointments-list"><div class="loading-center"><div class="spinner spinner-lg"></div></div></div>
           </section>
           
           <!-- Doctor Queue Section -->
           <section id="dash-queue" class="hidden">
-            <h2 class="section-title">👨‍⚕️ Patient Consultation Queue</h2>
-            <p class="section-sub">Next patients scheduled for AI-assisted consultation.</p>
-            <div id="doctor-queue-list">
-               <div style="text-align:center;padding:40px;color:var(--text-muted);">No patients in queue.</div>
+            <h2 class="section-title">👨‍⚕️ Clinical Command Center</h2>
+
+            <div style="display:grid; grid-template-columns: 1fr 320px; gap:20px; align-items: flex-start;">
+               <div>
+                  <p class="section-sub">Next patients scheduled for AI-assisted consultation.</p>
+                  <div id="doctor-queue-list">
+                     <div style="text-align:center;padding:40px;color:var(--text-muted);">No patients in queue.</div>
+                  </div>
+               </div>
+
+               <!-- Radiology AI Assistant -->
+               <div class="card" style="padding:20px; background: #000; border: 1px solid #334155; border-radius:16px; position: sticky; top: 100px;">
+                  <h3 style="color:#a5b4fc; font-size:0.85rem; margin-bottom:15px; display:flex; justify-content:space-between; font-weight:800;">
+                     ☢️ RADIOLOGY AI
+                     <span class="badge" style="background:#4f46e5; color:white; font-size:0.5rem; padding:2px 6px;">V3.2 CORE</span>
+                  </h3>
+                  <div style="position:relative; width:100%; aspect-ratio:1/1; background:#111; border-radius:8px; overflow:hidden; border:1px solid #222;">
+                     <img src="https://images.unsplash.com/photo-1581093458791-9f3c3250bb8b?auto=format&fit=crop&w=300&q=80" style="width:100%; height:100%; object-fit:cover; opacity:0.6; filter:grayscale(1) contrast(1.2);">
+                     <!-- AI Bounding Box Simulation -->
+                     <div id="ai-bounding-box" style="position:absolute; top:30%; left:25%; width:40%; height:25%; border:2px solid #f43f5e; display:none; animation: pulse-glow 1s infinite;">
+                        <span style="position:absolute; top:-18px; left:-2px; background:#f43f5e; color:white; font-size:0.5rem; padding:2px 5px; font-weight:800; border-radius:2px;">ANOMALY DETECTED (92%)</span>
+                     </div>
+                  </div>
+                  <button class="btn btn-primary btn-sm" style="width:100%; margin-top:15px; font-size:0.7rem; font-weight:800;" onclick="window.runRadiologyAI()">Run AI Inference</button>
+                  <div style="margin-top:12px; font-size:0.6rem; color:#94a3b8; font-family:monospace; line-height:1.5;">
+                     [SYSTEM] Ready for inference...<br>
+                     [MODEL] ResNet-101 (TensorRT)<br>
+                     [GPU] Tesla T4 Cluster Active
+                  </div>
+               </div>
             </div>
           </section>
 
@@ -542,6 +646,39 @@
           </section>
           <section id="dash-timeline" class="hidden">
             <!-- Populated by timeline.js -->
+          </section>
+          <section id="dash-family" class="hidden">
+            <!-- Populated by family-hub.js -->
+          </section>
+          <section id="dash-inclusive" class="hidden">
+            <h2 class="section-title">🌟 Quick Help (Simple Mode)</h2>
+            <p class="section-sub">Tap on what you need. No reading required.</p>
+            <div class="inclusive-grid">
+               <button class="inclusive-card" data-action="doctor">
+                  <div class="inclusive-icon">🩺</div>
+                  <div class="inclusive-label">Talk to Doctor</div>
+               </button>
+               <button class="inclusive-card" data-action="pharmacy">
+                  <div class="inclusive-icon">💊</div>
+                  <div class="inclusive-label">Get Medicine</div>
+               </button>
+               <button class="inclusive-card" data-action="pain">
+                  <div class="inclusive-icon">⚡</div>
+                  <div class="inclusive-label">Body Pain</div>
+               </button>
+               <button class="inclusive-card" data-action="fever">
+                  <div class="inclusive-icon">🤒</div>
+                  <div class="inclusive-label">Fever / Cold</div>
+               </button>
+               <button class="inclusive-card" data-action="emergency">
+                  <div class="inclusive-icon">🚨</div>
+                  <div class="inclusive-label">Emergency</div>
+               </button>
+               <button class="inclusive-card" data-action="family">
+                  <div class="inclusive-icon">👨‍👩‍👧‍👦</div>
+                  <div class="inclusive-label">Family Vitals</div>
+               </button>
+            </div>
           </section>
           <section id="dash-rider" class="hidden">
             <!-- Populated by rider-dashboard.js -->
@@ -927,6 +1064,7 @@
 
         </div><!-- /right column -->
       </div><!-- /dash-pro-bottom -->
+      </main>
     </div><!-- /dash-pro-grid -->
 
     <!-- ── Analytics Charts ─────────────────────────────────────────────── -->
@@ -1148,8 +1286,11 @@
     <p class="section-sub">Search medicines and get them delivered via our optimised routing engine.</p>
 
     <div style="display:flex;gap:12px;margin-bottom:28px;flex-wrap:wrap;align-items:center;">
-      <div style="flex:1; min-width:240px; position:relative;">
+      <div style="flex:1; min-width:240px; position:relative; display:flex; gap:8px;">
         <input class="form-input" id="med-search" type="search" placeholder="Search medicines, generics, brands..." style="width:100%;" />
+        <button class="btn btn-outline" id="btn-scan-cabinet" title="Snap-to-Cart: Scan medicine strip or cabinet" style="display:flex; align-items:center; justify-content:center; width:45px; height:45px; padding:0; border-radius:12px; background:rgba(99,102,241,0.05);">
+           <span style="font-size:1.4rem;">📷</span>
+        </button>
       </div>
       <select class="form-input" id="med-category" style="width:180px;">
         <option value="">All Categories</option>
@@ -1332,6 +1473,7 @@
             <option value="contrast">🔍 Diagnostic Contrast</option>
             <option value="grayscale">🩻 Radiology Grayscale</option>
           </select>
+          <button class="btn btn-outline btn-sm" id="btn-video-blur" style="padding:4px 10px;font-size:0.7rem;background:rgba(0,0,0,0.6);border-color:rgba(255,255,255,0.15);color:#fff;cursor:pointer;margin:0;">✨ Blur</button>
           <button class="btn btn-outline btn-sm" id="btn-call-snapshot" style="padding:4px 10px;font-size:0.7rem;background:rgba(0,0,0,0.6);border-color:rgba(255,255,255,0.15);color:#fff;cursor:pointer;margin:0;">📸 Snapshot</button>
         </div>
 
@@ -1478,9 +1620,11 @@
       
       <!-- Quick Demo Sign-In Pills -->
       <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px;">
-        <button type="button" class="btn btn-sm btn-outline quick-login-btn" data-email="patient@mediflow.com" style="font-size:0.72rem; padding:4px 8px; border-radius:8px;">👤 Patient Demo</button>
-        <button type="button" class="btn btn-sm btn-outline quick-login-btn" data-email="doctor@mediflow.com" style="font-size:0.72rem; padding:4px 8px; border-radius:8px;">🩺 Doctor Demo</button>
-        <button type="button" class="btn btn-sm btn-outline quick-login-btn" data-email="pharmacist@mediflow.com" style="font-size:0.72rem; padding:4px 8px; border-radius:8px;">💊 Pharmacist Demo</button>
+        <button type="button" class="btn btn-sm btn-outline quick-login-btn" data-email="patient@mediflow.com" style="font-size:0.72rem; padding:4px 8px; border-radius:8px;">👤 Patient</button>
+        <button type="button" class="btn btn-sm btn-outline quick-login-btn" data-email="doctor@mediflow.com" style="font-size:0.72rem; padding:4px 8px; border-radius:8px;">🩺 Doctor</button>
+        <button type="button" class="btn btn-sm btn-outline quick-login-btn" data-email="pharmacist@mediflow.com" style="font-size:0.72rem; padding:4px 8px; border-radius:8px;">💊 Pharmacy</button>
+        <button type="button" class="btn btn-sm btn-outline quick-login-btn" data-email="rider@mediflow.com" style="font-size:0.72rem; padding:4px 8px; border-radius:8px;">🏍️ Rider</button>
+        <button type="button" class="btn btn-sm btn-outline quick-login-btn" data-email="admin@mediflow.com" style="font-size:0.72rem; padding:4px 8px; border-radius:8px;">🛡️ Admin</button>
       </div>
 
       <form class="modal-form" id="login-form" novalidate>
@@ -1497,6 +1641,21 @@
           <span class="spinner hidden" id="login-spinner"></span> Sign In
         </button>
       </form>
+
+      <div style="margin: 20px 0; display:flex; align-items:center; gap:10px;">
+        <div style="flex:1; height:1px; background:var(--border);"></div>
+        <div style="font-size:0.65rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px;">Or continue with</div>
+        <div style="flex:1; height:1px; background:var(--border);"></div>
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:20px;">
+        <button class="btn btn-outline btn-sm" style="display:flex; align-items:center; justify-content:center; gap:8px; font-size:0.75rem;">
+          <img src="https://cdn-icons-png.flaticon.com/512/300/300221.png" style="width:14px;"> Google
+        </button>
+        <button class="btn btn-outline btn-sm" style="display:flex; align-items:center; justify-content:center; gap:8px; font-size:0.75rem;">
+          <img src="https://cdn-icons-png.flaticon.com/512/0/747.png" style="width:14px; filter:grayscale(1);"> Apple
+        </button>
+      </div>
       <p class="modal-switch">No account? <a id="switch-to-register">Create one</a></p>
     </div>
 
@@ -1560,20 +1719,6 @@
         </button>
       </form>
       <p class="modal-switch">Already have an account? <a id="switch-to-login">Sign in</a></p>
-    </div>
-
-    <!-- ── Exhibition Quick Sign-In (New) ─────────────────────────────────── -->
-    <div id="demo-bootstrap" style="margin-top:24px;border-top:1px solid var(--border);padding-top:20px;">
-       <div style="font-size:.7rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;text-align:center;letter-spacing:.05em;">Exhibition Quick Access (Judge Mode)</div>
-       <div style="font-size:.65rem;color:var(--text-muted);text-align:center;margin-bottom:14px;">Password for all: <strong style="color:var(--primary);">Demo1234!</strong></div>
-       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <button class="btn btn-outline btn-sm demo-login-btn" data-demo-role="patient" style="font-size:.72rem;" title="Patient@gmail.com / Demo1234!">👤 Patient<br><span style="font-size:.6rem;opacity:.7">Patient@gmail.com</span></button>
-          <button class="btn btn-outline btn-sm demo-login-btn" data-demo-role="doctor" style="font-size:.72rem;" title="Doctor@gmail.com / Demo1234!">🩺 Doctor<br><span style="font-size:.6rem;opacity:.7">Doctor@gmail.com</span></button>
-          <button class="btn btn-outline btn-sm demo-login-btn" data-demo-role="pharmacist" style="font-size:.72rem;" title="Pharmacist@gmail.com / Demo1234!">💊 Pharmacist<br><span style="font-size:.6rem;opacity:.7">Pharmacist@gmail.com</span></button>
-          <button class="btn btn-outline btn-sm demo-login-btn" data-demo-role="rider" style="font-size:.72rem;" title="Rider@gmail.com / Demo1234!">🏍️ Rider<br><span style="font-size:.6rem;opacity:.7">Rider@gmail.com</span></button>
-          <button class="btn btn-outline btn-sm demo-login-btn" data-demo-role="admin" style="font-size:.72rem;" title="Admin@gmail.com / Demo1234!">🛡️ Admin<br><span style="font-size:.6rem;opacity:.7">Admin@gmail.com</span></button>
-          <button class="btn btn-outline btn-sm demo-login-btn" data-demo-role="worker" style="font-size:.72rem;" title="Worker@gmail.com / Demo1234!">👷 Worker<br><span style="font-size:.6rem;opacity:.7">Worker@gmail.com</span></button>
-       </div>
     </div>
   </div>
 </div>
@@ -1681,8 +1826,31 @@
          <!-- Cart summary -->
          <div id="checkout-items-list" style="margin-bottom:20px;max-height:180px;overflow-y:auto;"></div>
 
+         <!-- Chronic Care Subscription Toggle -->
+         <div id="checkout-subscription-box" style="margin-bottom:20px; padding:15px; background:rgba(16,185,129,0.05); border:1px solid rgba(16,185,129,0.2); border-radius:12px; display:flex; align-items:center; justify-content:space-between;">
+            <div style="display:flex; align-items:center; gap:12px;">
+               <div style="font-size:1.8rem;">🔁</div>
+               <div>
+                  <div style="font-weight:700; font-size:0.85rem; color:#10b981;">Chronic Care Subscription</div>
+                  <div style="font-size:0.7rem; color:var(--text-muted);">Auto-refill every 30 days & Save 15%</div>
+               </div>
+            </div>
+            <label class="switch">
+               <input type="checkbox" id="chk-subscribe-save">
+               <span class="slider round"></span>
+            </label>
+         </div>
+
          <div style="margin-bottom:20px;">
-            <label style="display:block; margin-bottom:8px; font-size:0.85rem; color:var(--text-secondary);">Delivery Address</label>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+               <label style="font-size:0.85rem; color:var(--text-secondary);">Delivery Address</label>
+               <div style="display:flex; gap:8px;">
+                  <select id="checkout-saved-addresses" class="form-input" style="padding:2px 8px; font-size:0.7rem; width:auto; height:auto; border-radius:6px;">
+                     <option value="">-- Saved --</option>
+                  </select>
+                  <button type="button" class="btn btn-outline btn-sm" id="btn-open-map-picker" style="padding:2px 8px; font-size:0.7rem; border-radius:6px;">📍 Choose on Map</button>
+               </div>
+            </div>
             <textarea id="checkout-address" class="form-input" rows="2" placeholder="Enter your full delivery address..." required></textarea>
          </div>
 
@@ -1739,9 +1907,9 @@
          </div>
        
         <div style="border-top:1px dashed var(--border); padding-top:16px; margin-bottom:20px;">
-           <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:0.9rem;"><span>Subtotal</span><span id="checkout-subtotal">$0.00</span></div>
+           <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:0.9rem;"><span>Subtotal</span><span id="checkout-subtotal">₹0.00</span></div>
            <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:0.9rem;"><span>Delivery Fee (⚡ Instant)</span><span style="color:var(--success);">Free</span></div>
-           <div style="display:flex; justify-content:space-between; font-weight:700; font-size:1.2rem; margin-top:12px;"><span>Total to Pay</span><span id="checkout-total">$0.00</span></div>
+           <div style="display:flex; justify-content:space-between; font-weight:700; font-size:1.2rem; margin-top:12px;"><span>Total to Pay</span><span id="checkout-total">₹0.00</span></div>
         </div>
 
         <button type="submit" id="btn-confirm-pay" class="btn btn-primary" style="width:100%; font-size:1.1rem; padding:14px; position:relative; overflow:hidden;">
@@ -1754,9 +1922,71 @@
 </div>
 
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script id="google-maps-sdk"></script>
-<script type="module" src="js/app.js"></script>
+
+
+<!-- ── Snap-to-Cart Vision Modal ────────────────────────────────────────── -->
+<div id="snap-cart-modal" class="modal-overlay hidden" style="z-index:1000001;">
+  <div class="modal-content card" style="max-width:500px; padding:0;">
+    <div style="padding:15px 20px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+       <h2 style="margin:0; font-size:1.1rem; display:flex; align-items:center; gap:8px;">
+          <span>📷 Snap-to-Cart AI</span>
+          <span class="badge badge-primary" style="font-size:0.6rem;">GEMINI 1.5 FLASH VISION</span>
+       </h2>
+       <button class="btn btn-outline btn-sm" id="close-snap-cart" style="border:none;">✕</button>
+    </div>
+    <div style="padding:24px;">
+       <div id="snap-dropzone" style="border: 2px dashed var(--primary); padding: 40px; border-radius: 16px; text-align: center; cursor: pointer; background: rgba(99,102,241,0.02); transition: all 0.3s; margin-bottom:20px;">
+          <div style="font-size: 3.5rem; margin-bottom: 15px;">💊</div>
+          <div style="font-weight: 800; font-size: 1.1rem; color: var(--primary);">Scan Medicine Strip</div>
+          <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 5px;">Take a clear photo of your medicine strip or cabinet. Our AI will identify and add them to your cart.</div>
+          <input type="file" id="snap-file-input" style="display:none;" accept="image/*">
+       </div>
+
+       <div id="snap-loading" class="hidden" style="text-align:center; padding:30px;">
+          <div class="spinner spinner-lg" style="margin:0 auto 20px; width:40px; height:40px; border-width:4px;"></div>
+          <div style="font-weight:700; color:var(--primary); font-size:1.1rem;">AI Visual Analysis...</div>
+          <div style="font-size:0.8rem; color:var(--text-muted); margin-top:8px;">Identifying molecules, brand, and dosage strength.</div>
+       </div>
+
+       <div id="snap-results" class="hidden">
+          <h3 style="font-size:0.95rem; font-weight:800; margin-bottom:15px; color:var(--text-main);">AI Identified Items</h3>
+          <div id="snap-item-list" style="display:flex; flex-direction:column; gap:12px; margin-bottom:24px; max-height:200px; overflow-y:auto;">
+             <!-- Result items -->
+          </div>
+          <button class="btn btn-primary" id="btn-add-snapped" style="width:100%; height:48px; font-weight:800;">Add Identified Items to Cart</button>
+       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Address Map Picker Modal ────────────────────────────────────────── -->
+<div id="address-picker-modal" class="modal-overlay hidden" style="z-index:1000000;">
+  <div class="modal-content card" style="max-width:800px; width:95%; height:90vh; padding:0; display:flex; flex-direction:column;">
+    <div style="padding:15px 20px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+       <h2 style="margin:0; font-size:1.1rem; display:flex; align-items:center; gap:8px;">
+          <span>📍 Pin Delivery Location</span>
+          <span class="badge badge-routine" style="font-size:0.6rem;">AI ADDRESSING</span>
+       </h2>
+       <button class="btn btn-outline btn-sm" id="close-address-picker" style="border:none;">✕</button>
+    </div>
+    <div id="address-picker-map" style="flex:1; width:100%; position:relative;">
+       <!-- Map injected here -->
+       <div style="position:absolute; top:20px; left:50%; transform:translateX(-50%); z-index:1000; background:rgba(15,23,42,0.9); padding:10px 20px; border-radius:30px; border:1px solid var(--primary); color:white; font-size:0.8rem; font-weight:700; white-space:nowrap; pointer-events:none;">
+          Drag the map to position the pin 🎯
+       </div>
+    </div>
+    <div style="padding:20px; border-top:1px solid var(--border); background:var(--bg-base);">
+       <div style="margin-bottom:15px;">
+          <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:5px; text-transform:uppercase; font-weight:700;">AI Detected Address</div>
+          <div id="picker-detected-address" style="font-weight:600; font-size:0.95rem; min-height:1.2em;">Locating...</div>
+       </div>
+       <div style="display:flex; gap:12px;">
+          <input type="text" id="picker-address-label" placeholder="e.g. Home, Office" class="form-input" style="flex:0.4;" />
+          <button class="btn btn-primary" id="btn-confirm-address" style="flex:1; font-weight:700;">Confirm Location & Save</button>
+       </div>
+    </div>
+  </div>
+</div>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
      EMERGENCY SOS MODAL
@@ -1936,207 +2166,26 @@
 
 <!-- ── Mobile Bottom Navigation Bar (App-Like Native Feel) ──────────────── -->
 <nav id="mobile-bottom-nav">
-  <a class="mob-nav-item active" data-page="home">
-    <span class="mob-icon">🏠</span>
+  <a class="mob-nav-item active" data-page="home" href="#home">
+    <img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" style="width:20px;">
     <span>Home</span>
   </a>
-  <a class="mob-nav-item" data-page="triage">
-    <span class="mob-icon">🧠</span>
+  <a class="mob-nav-item" data-page="triage" href="#triage">
+    <img src="https://cdn-icons-png.flaticon.com/512/2103/2103633.png" style="width:20px;">
     <span>Triage</span>
   </a>
-  <a class="mob-nav-item" data-page="consultation">
-    <span class="mob-icon">📹</span>
-    <span>Consult</span>
+  <div class="mob-nav-item" id="mob-voice-trigger" style="transform:translateY(-15px); background:var(--accent); width:54px; height:54px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 20px rgba(99,102,241,0.4); border:3px solid white;">
+    <img src="https://cdn-icons-png.flaticon.com/512/1082/1082810.png" style="width:24px; filter:invert(1);">
+  </div>
+  <a class="mob-nav-item" data-page="pharmacy" href="#pharmacy">
+    <img src="https://cdn-icons-png.flaticon.com/512/2897/2897785.png" style="width:20px;">
+    <span>Pharma</span>
   </a>
-  <a class="mob-nav-item" data-page="pharmacy">
-    <span class="mob-icon">💊</span>
-    <span>Pharmacy</span>
-  </a>
-  <a class="mob-nav-item" data-page="dashboard">
-    <span class="mob-icon">👤</span>
-    <span>Profile</span>
+  <a class="mob-nav-item" data-page="dashboard" href="#dashboard">
+    <img src="https://cdn-icons-png.flaticon.com/512/1828/1828762.png" style="width:20px;">
+    <span>Panel</span>
   </a>
 </nav>
-
-<!-- ── 5-Page Localhost Presentation Slide Deck Modal (PPT) ────────────────── -->
-<div class="modal-overlay hidden" id="ppt-slide-modal" style="z-index:99999; background:rgba(13,17,23,0.96); backdrop-filter:blur(15px);">
-  <div style="width:94vw; max-width:1200px; height:90vh; background:#0d1117; border:1px solid rgba(99,102,241,0.3); border-radius:24px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 25px 50px rgba(0,0,0,0.5);">
-    
-    <!-- PPT Header Bar -->
-    <div style="padding:14px 24px; background:#161b22; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
-      <div style="display:flex; align-items:center; gap:12px;">
-        <span style="font-size:1.5rem;">🏥</span>
-        <div>
-          <div style="font-weight:800; font-size:1.05rem; color:var(--text-main);">MediFlow Enterprise — Visual Tech Deck (Hackathon Presentation)</div>
-          <div style="font-size:0.75rem; color:var(--text-muted);">Non-Technical & Non-Medical Visual Guide</div>
-        </div>
-      </div>
-      <div style="display:flex; align-items:center; gap:12px;">
-        <span id="ppt-slide-indicator" style="font-size:0.85rem; font-weight:700; background:rgba(99,102,241,0.15); color:#818cf8; padding:4px 12px; border-radius:99px; border:1px solid rgba(99,102,241,0.3);">Slide 1 of 5</span>
-        <button class="btn btn-outline btn-sm" id="ppt-close-btn" style="border-radius:50%; width:34px; height:34px; padding:0; display:flex; align-items:center; justify-content:center;">✕</button>
-      </div>
-    </div>
-
-    <!-- PPT Main Slide Canvas Area -->
-    <div style="flex:1; padding:24px 32px; overflow-y:auto; position:relative;" id="ppt-slide-viewport">
-      
-      <!-- ── SLIDE 1: Executive Overview & Visual Problem Statement ── -->
-      <div class="ppt-slide-page" id="ppt-slide-1" style="display:block;">
-        <div style="display:inline-block; padding:4px 14px; background:rgba(99,102,241,0.15); color:#818cf8; border-radius:99px; font-weight:700; font-size:0.78rem; margin-bottom:10px;">SLIDE 1 / 5 · PROJECT VISION & PROBLEM</div>
-        <h1 style="font-size:2rem; font-weight:900; color:#fff; margin-bottom:8px;">MediFlow Enterprise: AI-First Healthcare for India</h1>
-        <p style="font-size:0.95rem; color:#94a3b8; margin-bottom:18px;">
-          Connecting Patients, Doctors, Pharmacists, and Delivery Riders through real-time AI and 3D Drones.
-        </p>
-
-        <!-- High-Res Patient Journey Diagram -->
-        <div style="text-align:center; margin-bottom:20px; background:#161b22; padding:12px; border-radius:16px; border:1px solid var(--border);">
-          <img src="docs/images/patient_workflow.png" onerror="if(!this.dataset.t){this.dataset.t=1;this.src='/docs/images/patient_workflow.png';}" alt="Patient Care Journey Workflow" style="width:100%; max-height:280px; object-fit:contain; border-radius:10px;" />
-        </div>
-
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:14px;">
-          <div style="background:#161b22; padding:14px; border-radius:12px; border:1px solid rgba(99,102,241,0.2); text-align:center;">
-            <div style="font-size:1.5rem;">🤖</div>
-            <div style="font-size:1.1rem; font-weight:800; color:#818cf8; margin:4px 0;">8 AI Engines</div>
-            <div style="font-size:0.75rem; color:#94a3b8;">Triage, Safety, Drones, Vitals</div>
-          </div>
-          <div style="background:#161b22; padding:14px; border-radius:12px; border:1px solid rgba(16,185,129,0.2); text-align:center;">
-            <div style="font-size:1.5rem;">🛡️</div>
-            <div style="font-size:1.1rem; font-weight:800; color:#34d399; margin:4px 0;">Quantum Safe</div>
-            <div style="font-size:0.75rem; color:#94a3b8;">NIST Certified Encryption</div>
-          </div>
-          <div style="background:#161b22; padding:14px; border-radius:12px; border:1px solid rgba(236,72,153,0.2); text-align:center;">
-            <div style="font-size:1.5rem;">⚡</div>
-            <div style="font-size:1.1rem; font-weight:800; color:#f472b6; margin:4px 0;">8 Microservices</div>
-            <div style="font-size:0.75rem; color:#94a3b8;">Go + Node + Python + Kafka</div>
-          </div>
-          <div style="background:#161b22; padding:14px; border-radius:12px; border:1px solid rgba(245,158,11,0.2); text-align:center;">
-            <div style="font-size:1.5rem;">👥</div>
-            <div style="font-size:1.1rem; font-weight:800; color:#fbbf24; margin:4px 0;">5 User Roles</div>
-            <div style="font-size:0.75rem; color:#94a3b8;">Patient, Doctor, Pharmacy, Rider, Admin</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── SLIDE 2: Patient & Doctor Visual AI Flow ── -->
-      <div class="ppt-slide-page" id="ppt-slide-2" style="display:none;">
-        <div style="display:inline-block; padding:4px 14px; background:rgba(99,102,241,0.15); color:#818cf8; border-radius:99px; font-weight:700; font-size:0.78rem; margin-bottom:10px;">SLIDE 2 / 5 · PATIENT & DOCTOR AI STACK</div>
-        <h2 style="font-size:1.8rem; font-weight:800; color:#fff; margin-bottom:12px;">Explainable AI Triage & 2 AM Heart Warning</h2>
-
-        <!-- SHAP Diagram Embed -->
-        <div style="text-align:center; margin-bottom:16px; background:#161b22; padding:12px; border-radius:16px; border:1px solid var(--border);">
-          <img src="docs/images/shap_triage_workflow.png" onerror="if(!this.dataset.t){this.dataset.t=1;this.src='/docs/images/shap_triage_workflow.png';}" alt="SHAP Triage Visual Flow" style="width:100%; max-height:280px; object-fit:contain; border-radius:10px;" />
-        </div>
-
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-          <div style="background:#161b22; padding:16px; border-radius:12px; border:1px solid var(--border);">
-            <h3 style="color:#818cf8; font-size:0.95rem; font-weight:800; margin-bottom:6px;">🔍 Explainable AI (No "Black Box")</h3>
-            <p style="font-size:0.8rem; color:#94a3b8; line-height:1.4;">
-              Instead of guessing, the AI shows doctors exact reasons for predictions: Chest Pain (+0.34) and Shortness of Breath (+0.21).
-            </p>
-          </div>
-          <div style="background:#161b22; padding:16px; border-radius:12px; border:1px solid var(--border);">
-            <h3 style="color:#f472b6; font-size:0.95rem; font-weight:800; margin-bottom:6px;">📡 2 AM Heart & Oxygen Anomaly Detection</h3>
-            <p style="font-size:0.8rem; color:#94a3b8; line-height:1.4;">
-              An LSTM Neural Network checks heart rate and oxygen levels while patients sleep. If an arrhythmia occurs at 2 AM, doctors get an instant alert.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── SLIDE 3: Pharmacist & 3D Drone Logistics ── -->
-      <div class="ppt-slide-page" id="ppt-slide-3" style="display:none;">
-        <div style="display:inline-block; padding:4px 14px; background:rgba(99,102,241,0.15); color:#818cf8; border-radius:99px; font-weight:700; font-size:0.78rem; margin-bottom:10px;">SLIDE 3 / 5 · DRUG SAFETY & 3D DRONES</div>
-        <h2 style="font-size:1.8rem; font-weight:800; color:#fff; margin-bottom:12px;">Drug Interaction GNN & Autonomous 3D Drones</h2>
-
-        <!-- FedAvg & Drone Diagram Embed -->
-        <div style="text-align:center; margin-bottom:16px; background:#161b22; padding:12px; border-radius:16px; border:1px solid var(--border);">
-          <img src="docs/images/fedavg_and_drone_workflow.png" onerror="if(!this.dataset.t){this.dataset.t=1;this.src='/docs/images/fedavg_and_drone_workflow.png';}" alt="Drug Safety & 3D Drone Delivery Workflow" style="width:100%; max-height:280px; object-fit:contain; border-radius:10px;" />
-        </div>
-
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-          <div style="background:#161b22; padding:16px; border-radius:12px; border:1px solid var(--border);">
-            <h3 style="color:#34d399; font-size:0.95rem; font-weight:800; margin-bottom:6px;">🕸️ Graph Neural Network (Drug Safety)</h3>
-            <p style="font-size:0.8rem; color:#94a3b8; line-height:1.4;">
-              Maps 45 drugs in a network graph to catch dangerous medicine combinations (like Warfarin + Aspirin) before prescriptions are given.
-            </p>
-          </div>
-          <div style="background:#161b22; padding:16px; border-radius:12px; border:1px solid var(--border);">
-            <h3 style="color:#fbbf24; font-size:0.95rem; font-weight:800; margin-bottom:6px;">🚁 Autonomous 3D Drone Pathfinder</h3>
-            <p style="font-size:0.8rem; color:#94a3b8; line-height:1.4;">
-              Computes 3D flight paths up to 120m altitude, avoids government no-fly zones, and tracks vaccine storage temperatures (+2.8°C).
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── SLIDE 4: Security & Post-Quantum Protection ── -->
-      <div class="ppt-slide-page" id="ppt-slide-4" style="display:none;">
-        <div style="display:inline-block; padding:4px 14px; background:rgba(99,102,241,0.15); color:#818cf8; border-radius:99px; font-weight:700; font-size:0.78rem; margin-bottom:10px;">SLIDE 4 / 5 · SECURITY & DATA PROTECTION</div>
-        <h2 style="font-size:1.8rem; font-weight:800; color:#fff; margin-bottom:12px;">Enterprise Security & Quantum-Safe Shield</h2>
-
-        <!-- Security & PQC Diagram Embed -->
-        <div style="text-align:center; margin-bottom:16px; background:#161b22; padding:12px; border-radius:16px; border:1px solid var(--border);">
-          <img src="docs/images/security_and_pqc_workflow.png" onerror="if(!this.dataset.t){this.dataset.t=1;this.src='/docs/images/security_and_pqc_workflow.png';}" alt="Security & Post Quantum Architecture" style="width:100%; max-height:280px; object-fit:contain; border-radius:10px;" />
-        </div>
-
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; text-align:center;">
-          <div style="background:#161b22; padding:14px; border-radius:12px; border:1px solid rgba(16,185,129,0.3);">
-            <div style="font-size:1.4rem;">🔐</div>
-            <div style="font-weight:800; font-size:0.9rem; color:#34d399; margin:4px 0;">AES-256-GCM Encryption</div>
-            <div style="font-size:0.75rem; color:#94a3b8;">Every health record encrypted at rest</div>
-          </div>
-          <div style="background:#161b22; padding:14px; border-radius:12px; border:1px solid rgba(99,102,241,0.3);">
-            <div style="font-size:1.4rem;">⚛️</div>
-            <div style="font-weight:800; font-size:0.9rem; color:#818cf8; margin:4px 0;">Post-Quantum Cryptography</div>
-            <div style="font-size:0.75rem; color:#94a3b8;">NIST Kyber-768 & Dilithium-3</div>
-          </div>
-          <div style="background:#161b22; padding:14px; border-radius:12px; border:1px solid rgba(245,158,11,0.3);">
-            <div style="font-size:1.4rem;">📋</div>
-            <div style="font-weight:800; font-size:0.9rem; color:#fbbf24; margin:4px 0;">India DPDP Act 2023</div>
-            <div style="font-size:0.75rem; color:#94a3b8;">Data export & right-to-erase APIs</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── SLIDE 5: Architecture & Benchmarks ── -->
-      <div class="ppt-slide-page" id="ppt-slide-5" style="display:none;">
-        <div style="display:inline-block; padding:4px 14px; background:rgba(99,102,241,0.15); color:#818cf8; border-radius:99px; font-weight:700; font-size:0.78rem; margin-bottom:10px;">SLIDE 5 / 5 · ARCHITECTURE & SPEED</div>
-        <h2 style="font-size:1.8rem; font-weight:800; color:#fff; margin-bottom:12px;">Microservice Topology & Performance</h2>
-
-        <!-- Architecture Diagram Embed -->
-        <div style="text-align:center; margin-bottom:16px; background:#161b22; padding:12px; border-radius:16px; border:1px solid var(--border);">
-          <img src="docs/images/architecture_diagram.png" onerror="if(!this.dataset.t){this.dataset.t=1;this.src='/docs/images/architecture_diagram.png';}" alt="System Architecture Diagram" style="width:100%; max-height:280px; object-fit:contain; border-radius:10px;" />
-        </div>
-
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-          <div style="background:#161b22; padding:14px; border-radius:12px; border:1px solid var(--border);">
-            <h3 style="color:#818cf8; font-size:0.9rem; font-weight:800; margin-bottom:4px;">🏗️ 8 Microservices</h3>
-            <p style="font-size:0.78rem; color:#94a3b8;">Go Gateway, Node.js Backend, Python FastAPI ML Engine, Kafka Bus, MongoDB 7, Prometheus & Grafana.</p>
-          </div>
-          <div style="background:#161b22; padding:14px; border-radius:12px; border:1px solid var(--border);">
-            <h3 style="color:#34d399; font-size:0.9rem; font-weight:800; margin-bottom:4px;">⚡ High Speed & Scale</h3>
-            <p style="font-size:0.78rem; color:#94a3b8;">Tested under k6 load tests up to 500 Virtual Users with P95 response times < 180ms.</p>
-          </div>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- PPT Navigation Footer Bar -->
-    <div style="padding:14px 24px; background:#161b22; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
-      <button class="btn btn-outline btn-sm" id="ppt-prev-btn" style="border-radius:12px; font-weight:700;">◀ Previous Slide</button>
-      <div style="display:flex; gap:8px;" id="ppt-dots-container">
-        <span class="ppt-dot" data-slide="1" style="width:10px; height:10px; border-radius:50%; background:#818cf8; cursor:pointer;"></span>
-        <span class="ppt-dot" data-slide="2" style="width:10px; height:10px; border-radius:50%; background:var(--border); cursor:pointer;"></span>
-        <span class="ppt-dot" data-slide="3" style="width:10px; height:10px; border-radius:50%; background:var(--border); cursor:pointer;"></span>
-        <span class="ppt-dot" data-slide="4" style="width:10px; height:10px; border-radius:50%; background:var(--border); cursor:pointer;"></span>
-        <span class="ppt-dot" data-slide="5" style="width:10px; height:10px; border-radius:50%; background:var(--border); cursor:pointer;"></span>
-      </div>
-      <button class="btn btn-primary btn-sm" id="ppt-next-btn" style="border-radius:12px; font-weight:700;">Next Slide ▶</button>
-    </div>
-
-  </div>
-</div>
 
 <!-- ── External Libraries & App Scripts ────────────────────────────────────── -->
 

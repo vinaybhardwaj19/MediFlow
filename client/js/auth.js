@@ -10,6 +10,17 @@ import { navigate } from './router.js';
 export async function restoreSession() {
   const token = api.getToken();
   if (!token) return false;
+
+  // Handle demo tokens (non-JWT)
+  if (!token.includes('.')) {
+    const stored = sessionStorage.getItem('mf_demo_user');
+    if (stored) {
+      setState('user', JSON.parse(stored));
+      return true;
+    }
+    return false;
+  }
+
   const decoded = api.decodeToken(token);
   if (!decoded || decoded.exp * 1000 < Date.now()) {
     // Try refresh
@@ -80,6 +91,11 @@ export function initAuth() {
     document.getElementById('extra-doctor').classList.toggle('hidden', role !== 'doctor');
     document.getElementById('extra-pharmacist').classList.toggle('hidden', role !== 'pharmacist');
     document.getElementById('extra-rider').classList.toggle('hidden', role !== 'rider');
+
+    // Highlight if helper role
+    if (role === 'worker') {
+      toastInfo('Frontline Worker', 'Worker accounts act as Helpers for uneducated patients.');
+    }
   });
 
   // Quick Login Buttons
@@ -90,7 +106,16 @@ export function initAuth() {
       const passInput = document.getElementById('login-password');
       if (emailInput) emailInput.value = email;
       if (passInput) passInput.value = 'Demo1234!';
-      document.getElementById('login-form')?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+
+      // Visual feedback
+      const originalText = btn.textContent;
+      btn.innerHTML = '<span class="spinner"></span>';
+
+      // Auto-submit after 300ms for a "Pro" automated feel
+      setTimeout(() => {
+        document.getElementById('login-form')?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+        btn.textContent = originalText;
+      }, 400);
     });
   });
 
@@ -110,24 +135,23 @@ export function initAuth() {
     try {
       user = await login(email, password);
     } catch (err) {
-      console.warn('[Auth Fallback] Backend offline — logging in with client demo state for', email);
-      const role = email.includes('doctor') ? 'doctor' : email.includes('pharmacist') ? 'pharmacist' : email.includes('rider') ? 'rider' : 'patient';
-      user = {
-        _id: 'usr_demo_' + Date.now().toString(36),
-        firstName: email.split('@')[0] || 'Demo',
-        lastName: 'User',
-        email: email,
-        role: role,
-        isVerified: true
-      };
-      api.setToken('demo_token_' + Date.now());
-      setState('user', user);
+      toastError('Login Failed', err.message || 'Could not connect to authentication server.');
+      spinner.classList.add('hidden'); btn.disabled = false;
+      return;
     }
 
     closeModal();
     updateNavForUser(user);
     toastSuccess('Welcome back!', `Signed in as ${user.firstName}`);
-    navigate('dashboard');
+
+    // Redirect to saved destination or dashboard
+    const redirect = sessionStorage.getItem('mf_redirect');
+    if (redirect) {
+      sessionStorage.removeItem('mf_redirect');
+      navigate(redirect);
+    } else {
+      navigate('dashboard');
+    }
     spinner.classList.add('hidden'); btn.disabled = false;
   });
 
@@ -196,9 +220,16 @@ export function initAuth() {
         const emailRole = role.charAt(0).toUpperCase() + role.slice(1);
         const user = await login(`${emailRole}@gmail.com`, 'Demo1234!');
         toastSuccess('Demo Access', `Authenticated as ${role.toUpperCase()} — Welcome to MediFlow.`);
-        // Add a small delay to show success toast
+
+        // Redirect to saved destination or dashboard
+        const redirect = sessionStorage.getItem('mf_redirect');
         setTimeout(() => {
-          navigate('dashboard');
+          if (redirect) {
+            sessionStorage.removeItem('mf_redirect');
+            navigate(redirect);
+          } else {
+            navigate('dashboard');
+          }
         }, 1000);
       } catch (err) {
         toastError('Login Failed', 'Demo credentials not seeded yet. Run: npm run seed');

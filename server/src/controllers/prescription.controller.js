@@ -15,10 +15,7 @@ const emailService   = require('../services/email.service');
 
 // ─── Helper: decrypt sensitive fields for response ────────────────────────────
 function decryptPrescription(doc) {
-  const obj = doc.toObject ? doc.toObject() : { ...doc };
-  if (obj.diagnosis) obj.diagnosis = decrypt(obj.diagnosis);
-  if (obj.notes)     obj.notes     = decrypt(obj.notes);
-  return obj;
+  return doc.toObject ? doc.toObject() : { ...doc };
 }
 
 // ─── POST /api/v1/prescriptions ───────────────────────────────────────────────
@@ -46,8 +43,8 @@ exports.createPrescription = async (req, res) => {
     patientId,
     doctorId  : req.user.id,
     medications,
-    diagnosis : encrypt(diagnosis),
-    notes     : notes ? encrypt(notes) : undefined,
+    diagnosis : diagnosis,
+    notes     : notes ? notes : undefined,
   });
 
   // Link prescription back to appointment

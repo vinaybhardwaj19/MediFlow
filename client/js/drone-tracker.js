@@ -1,7 +1,6 @@
 /**
- * drone-tracker.js — Self-contained 3D Fleet Tracker
- * No external API key needed. Canvas-based isometric city map with
- * animated delivery vehicles (drones, bikes, vans).
+ * drone-tracker.js — Self-contained 3D Fleet Tracker (Mapbox GL)
+ * 3D Fleet Command Center with extruded buildings and live telemetry.
  */
 
 const MAP_CENTER = { lat: 12.9716, lng: 77.5946 };
@@ -11,7 +10,7 @@ const VEHICLE_TYPES = {
   van:   { icon: '🚐', color: '#f59e0b', speed: 0.3, label: 'Van' },
 };
 
-class LeafletFleetTracker {
+class MapboxFleetTracker {
   constructor(containerId) {
     this.containerId = containerId;
     this.map = null;
@@ -20,48 +19,149 @@ class LeafletFleetTracker {
 
   init() {
     const el = document.getElementById(this.containerId);
-    if (!el || !window.L) return;
+    if (!el || !window.mapboxgl) {
+      console.warn("Mapbox GL not loaded.");
+      return;
+    }
 
     el.innerHTML = '';
-    this.map = window.L.map(this.containerId, {
-      zoomControl: false,
-      attributionControl: false
-    }).setView([12.9716, 77.5946], 13); // Default Bengaluru
+    // Dummy token to satisfy SDK. We use custom raster tiles + custom geojson to bypass auth.
+    window.mapboxgl.accessToken = 'pk.eyJ1IjoiZGVtbyIsImEiOiJjbDF2b2V5b2MweDByM2NxZ3Z4a2cweWwyIn0.DEMO_TOKEN';
 
-    window.L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      subdomains: 'abcd',
-      maxZoom: 19
-    }).addTo(this.map);
+    this.map = new window.mapboxgl.Map({
+      container: this.containerId,
+      style: {
+        'version': 8,
+        'sources': {
+          'raster-tiles': {
+            'type': 'raster',
+            'tiles': ['https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'],
+            'tileSize': 256
+          },
+          'mock-buildings': {
+             'type': 'geojson',
+             'data': this._getMockBuildings()
+          }
+        },
+        'layers': [
+          {
+            'id': 'simple-tiles',
+            'type': 'raster',
+            'source': 'raster-tiles',
+            'minzoom': 0,
+            'maxzoom': 22
+          },
+          {
+            'id': '3d-buildings',
+            'source': 'mock-buildings',
+            'type': 'fill-extrusion',
+            'paint': {
+               'fill-extrusion-color': ['get', 'color'],
+               'fill-extrusion-height': ['get', 'height'],
+               'fill-extrusion-base': 0,
+               'fill-extrusion-opacity': 0.6
+            }
+          }
+        ]
+      },
+      center: [77.5946, 12.9716],
+      zoom: 15.5,
+      pitch: 60, // 3D Pitch
+      bearing: -20,
+      antialias: true,
+      interactive: true
+    });
 
-    this._generateFleet();
-    this._animate();
-    this._updateFleetListUI();
+    this.map.on('load', () => {
+      this._generateFleet();
+      this._animate();
+      this._updateFleetListUI();
+      
+      // Auto-rotate camera slowly for command center feel
+      this._rotateCamera();
+    });
 
     const badge = document.getElementById('drone-count-badge');
-    if (badge) badge.textContent = `${this.fleet.length} active`;
+    if (badge) badge.textContent = `3 active`;
+  }
+
+  _rotateCamera() {
+     if(!this.map) return;
+     const bearing = this.map.getBearing();
+     this.map.easeTo({ bearing: bearing + 5, duration: 3000, easing: (t) => t });
+     this._rotateInterval = setTimeout(() => this._rotateCamera(), 3000);
+  }
+
+  _getMockBuildings() {
+    // Generates some mock 3D cubes around the center to simulate a 3D city
+    const features = [];
+    for(let i=0; i<30; i++) {
+       const lng = 77.5946 + (Math.random() - 0.5) * 0.02;
+       const lat = 12.9716 + (Math.random() - 0.5) * 0.02;
+       const size = 0.0002 + Math.random() * 0.0003;
+       const height = 20 + Math.random() * 150;
+       
+       features.push({
+         'type': 'Feature',
+         'properties': {
+            'color': Math.random() > 0.8 ? '#4f46e5' : '#1e293b',
+            'height': height
+         },
+         'geometry': {
+            'type': 'Polygon',
+            'coordinates': [[
+               [lng-size, lat-size],
+               [lng+size, lat-size],
+               [lng+size, lat+size],
+               [lng-size, lat+size],
+               [lng-size, lat-size]
+            ]]
+         }
+       });
+    }
+    // Add central pharmacy hub
+    features.push({
+         'type': 'Feature',
+         'properties': { 'color': '#10b981', 'height': 200 },
+         'geometry': {
+            'type': 'Polygon',
+            'coordinates': [[
+               [77.5942, 12.9712],
+               [77.5950, 12.9712],
+               [77.5950, 12.9720],
+               [77.5942, 12.9720],
+               [77.5942, 12.9712]
+            ]]
+         }
+    });
+    return { 'type': 'FeatureCollection', 'features': features };
   }
 
   _generateFleet() {
     this.fleet = [
       { id: 'RDR-001', type: 'bike', lat: 12.9716, lng: 77.5946, tLat: 12.9800, tLng: 77.6000, battery: 87, order: 'ORD-8492A' },
-      { id: 'RDR-014', type: 'bike', lat: 12.9650, lng: 77.5850, tLat: 12.9550, tLng: 77.5700, battery: 94, order: 'ORD-7721B' },
-      { id: 'RDR-003', type: 'van',  lat: 12.9900, lng: 77.6200, tLat: 13.0100, tLng: 77.6400, battery: 72, order: 'ORD-6539C' },
+      { id: 'DRN-X14', type: 'drone', lat: 12.9650, lng: 77.5850, tLat: 12.9550, tLng: 77.5700, battery: 94, order: 'ORD-7721B' },
+      { id: 'VAN-003', type: 'van',  lat: 12.9900, lng: 77.6200, tLat: 13.0100, tLng: 77.6400, battery: 72, order: 'ORD-6539C' },
     ];
 
     this.fleet.forEach(v => {
-      const icon = window.L.divIcon({
-        html: `<div style="font-size:1.5rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">${v.type === 'bike' ? '🏍️' : '🚐'}</div>`,
-        className: 'map-marker-icon',
-        iconSize: [24, 24]
-      });
-      const m = window.L.marker([v.lat, v.lng], { icon }).addTo(this.map);
+      const el = document.createElement('div');
+      el.className = 'mapbox-marker';
+      el.style.fontSize = v.type === 'drone' ? '2rem' : '1.5rem';
+      el.style.textShadow = '0 0 10px rgba(99,102,241,0.8)';
+      el.innerHTML = VEHICLE_TYPES[v.type].icon;
+      
+      const m = new window.mapboxgl.Marker(el)
+         .setLngLat([v.lng, v.lat])
+         .addTo(this.map);
       this.markers.set(v.id, m);
     });
   }
 
   _animate() {
+    if(!this.map) return;
     this.fleet.forEach(v => {
-      const step = 0.0001;
+      const step = 0.0002;
       const dLat = v.tLat - v.lat;
       const dLng = v.tLng - v.lng;
       const dist = Math.sqrt(dLat * dLat + dLng * dLng);
@@ -75,7 +175,7 @@ class LeafletFleetTracker {
       }
 
       const m = this.markers.get(v.id);
-      if (m) m.setLatLng([v.lat, v.lng]);
+      if (m) m.setLngLat([v.lng, v.lat]);
     });
 
     this._raf = requestAnimationFrame(() => this._animate());
@@ -89,15 +189,19 @@ class LeafletFleetTracker {
       list.innerHTML = this.fleet.map(v => {
         const battClass = v.battery > 50 ? 'high' : v.battery > 20 ? 'mid' : 'low';
         return `
-          <div class="drone-item">
-            <div class="drone-icon">${v.type === 'bike' ? '🏍️' : '🚐'}</div>
-            <div class="drone-info">
-              <div class="drone-serial">${v.id} · ${v.type.toUpperCase()}</div>
-              <div class="drone-status-text" style="color:var(--primary)">EN ROUTE · ${v.order}</div>
-            </div>
-            <div class="drone-battery">
-               <div class="battery-bar"><div class="battery-fill ${battClass}" style="width:${v.battery}%"></div></div>
-               <span>${v.battery}%</span>
+          <div class="drone-item card" style="padding:15px; margin-bottom:10px; border-left:3px solid ${VEHICLE_TYPES[v.type].color}; background:rgba(15,23,42,0.6);">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+               <div style="display:flex; align-items:center; gap:12px;">
+                 <div style="font-size:1.5rem;">${VEHICLE_TYPES[v.type].icon}</div>
+                 <div>
+                   <div style="font-weight:800; font-size:0.9rem;">${v.id} <span style="font-size:0.65rem; padding:2px 6px; background:rgba(255,255,255,0.1); border-radius:4px;">${VEHICLE_TYPES[v.type].label}</span></div>
+                   <div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">ORD: ${v.order} &middot; EN ROUTE</div>
+                 </div>
+               </div>
+               <div style="text-align:right;">
+                  <div style="font-size:0.8rem; font-weight:700; color:${battClass === 'high' ? '#10b981' : '#f59e0b'};">${v.battery}%</div>
+                  <div style="font-size:0.6rem; color:var(--text-secondary);">BATTERY</div>
+               </div>
             </div>
           </div>`;
       }).join('');
@@ -109,17 +213,19 @@ class LeafletFleetTracker {
   destroy() {
     cancelAnimationFrame(this._raf);
     clearInterval(this._listInterval);
+    clearTimeout(this._rotateInterval);
     if (this.map) this.map.remove();
+    this.map = null;
   }
 }
 
 let _tracker = null;
-let _leafletMap = null;
+let _leafletMap = null; // Used for simple 2D view like live-tracking
 let _deliveryMarker = null;
 
 export function initDroneTracker(containerId = 'drone-map-canvas') {
   if (_tracker) _tracker.destroy();
-  _tracker = new LeafletFleetTracker(containerId);
+  _tracker = new MapboxFleetTracker(containerId);
   _tracker.init();
   return _tracker;
 }
@@ -129,7 +235,7 @@ export function destroyDroneTracker() {
   _tracker = null;
 }
 
-// ── Real Map Delivery Tracking (Ludhiana) ────────────────────────────────────
+// ── Real Map Delivery Tracking (Ludhiana) - Fallback Leaflet ─────────────────
 export function startRealDeliveryTracking(containerId = 'delivery-map-container') {
   const container = document.getElementById(containerId);
   if (!container || !window.L) return;
@@ -271,3 +377,4 @@ export function startRealDeliveryTracking(containerId = 'delivery-map-container'
     requestAnimationFrame(animate);
   }, 1000);
 }
+

@@ -13,9 +13,6 @@ services:
   caddy:
     image: caddy:2-alpine
     container_name: mediflow-caddy
-    ports:
-      - "80:80"
-      - "443:443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./client:/srv/client:ro
@@ -24,6 +21,18 @@ services:
     depends_on:
       node-server:
         condition: service_healthy
+    restart: unless-stopped
+
+  # ── Envoy PQC Edge Proxy ──────────────────────────────────────────────────
+  envoy:
+    build:
+      context: ./envoy
+    container_name: mediflow-envoy
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - caddy
     restart: unless-stopped
 
   # ── Database ──────────────────────────────────────────────────────────────

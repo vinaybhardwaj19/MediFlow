@@ -34,6 +34,7 @@ const userSchema = new mongoose.Schema({
   address    : addressSchema,
   profileImage: String,                             // S3 key or URL
   isVerified : { type: Boolean, default: false },
+  isHelper   : { type: Boolean, default: false },   // ASHA / Frontline health worker
   isActive   : { type: Boolean, default: true, index: true },
   twoFactorEnabled: { type: Boolean, default: false },
   twoFactorSecret : { type: String, select: false }, // AES-256 encrypted at rest
@@ -86,6 +87,7 @@ userSchema.methods.toSafeObject = function () {
   delete obj.passwordHash;
   delete obj.refreshTokens;
   delete obj.twoFactorSecret;
+  // Ensure virtuals or added fields like isHelper are included if they aren't by default
   return obj;
 };
 

@@ -39,3 +39,37 @@ exports.fetchWeather = async (city) => {
     return null;
   }
 };
+
+/**
+ * Fetch Air Quality Index (AQI) for coordinates
+ * @param {number} lat - Latitude
+ * @param {number} lng - Longitude
+ * @returns {Promise<Object|null>} AQI data
+ */
+exports.fetchAQI = async (lat, lng) => {
+  const apiKey = process.env.OPENWEATHER_API_KEY;
+  if (!apiKey) return null;
+
+  try {
+    const url = `https://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lng}&appid=${apiKey}`;
+    const res = await fetch(url);
+    if (res.ok) {
+      const data = await res.json();
+      const list = data.list?.[0] || {};
+      const aqi = list.main?.aqi || 1; // 1=Good, 5=Poor
+
+      const labels = { 1: 'Good', 2: 'Fair', 3: 'Moderate', 4: 'Poor', 5: 'Very Poor' };
+      const colors = { 1: '#10b981', 2: '#eab308', 3: '#f97316', 4: '#ef4444', 5: '#991b1b' };
+
+      return {
+        index: aqi,
+        label: labels[aqi] || 'Unknown',
+        color: colors[aqi] || '#94a3b8',
+        components: list.components || {}
+      };
+    }
+  } catch (e) {
+    console.warn('[AQI] Fetch failed:', e);
+  }
+  return null;
+};

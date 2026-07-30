@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { verifyToken } = require('../auth.middleware');
+const env = require('../../config/env');
 
 describe('Auth Middleware Tests', () => {
   let mockReq;
@@ -15,11 +16,10 @@ describe('Auth Middleware Tests', () => {
       json: jest.fn()
     };
     mockNext = jest.fn();
-    process.env.JWT_SECRET = 'test_secret';
   });
 
   it('Valid token passes', () => {
-    const token = jwt.sign({ id: 'user_123', role: 'patient' }, process.env.JWT_SECRET);
+    const token = jwt.sign({ id: 'user_123', role: 'patient', email: 'test@example.com' }, env.JWT_ACCESS_SECRET);
     mockReq.headers.authorization = `Bearer ${token}`;
 
     verifyToken(mockReq, mockRes, mockNext);
@@ -30,25 +30,28 @@ describe('Auth Middleware Tests', () => {
   });
 
   it('Expired token returns 401', () => {
-    const token = jwt.sign({ id: 'user_123' }, process.env.JWT_SECRET, { expiresIn: '-1h' });
+    const token = jwt.sign({ id: 'user_123' }, env.JWT_ACCESS_SECRET, { expiresIn: '-1h' });
     mockReq.headers.authorization = `Bearer ${token}`;
 
-    verifyToken(mockReq, mockRes, mockNext);
+    const next = jest.fn();
+    verifyToken(mockReq, mockRes, next);
 
-    expect(mockRes.status).toHaveBeenCalledWith(401);
+    expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 401 }));
   });
 
   it('Missing Authorization header returns 401', () => {
-    verifyToken(mockReq, mockRes, mockNext);
+    const next = jest.fn();
+    verifyToken(mockReq, mockRes, next);
 
-    expect(mockRes.status).toHaveBeenCalledWith(401);
+    expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 401 }));
   });
 
   it('Malformed token returns 401', () => {
     mockReq.headers.authorization = 'Bearer invalid.token.here';
 
-    verifyToken(mockReq, mockRes, mockNext);
+    const next = jest.fn();
+    verifyToken(mockReq, mockRes, next);
 
-    expect(mockRes.status).toHaveBeenCalledWith(401);
+    expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 401 }));
   });
 });

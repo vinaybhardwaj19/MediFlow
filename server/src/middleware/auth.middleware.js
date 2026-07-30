@@ -30,6 +30,16 @@ const verifyToken = (req, res, next) => {
       role : decoded.role,
       email: decoded.email,
     };
+
+    // ASHA / Helper context override
+    const actingFor = req.headers['x-acting-for'];
+    if (actingFor && (decoded.role === 'worker' || decoded.isHelper)) {
+      // In a real app, we would verify the link between helper and patient in DB
+      // For the exhibition, we allow the override if the user has a helper role.
+      req.user.id = actingFor;
+      req.user.isActingAsHelper = true;
+    }
+
     next();
   } catch (err) {
     if (err.name === 'TokenExpiredError') {

@@ -74,6 +74,14 @@ const LOCAL_RESPONSES = [
     match: ['lab', 'test', 'blood test', 'cbc', 'lipid', 'hba1c', 'thyroid'],
     reply: `🧪 **Lab Diagnostics**\n\nBook home-collection tests:\n• **CBC** — Complete Blood Count\n• **Lipid Profile** — Cardiovascular risk\n• **HbA1c** — 3-month glucose average\n• **TSH** — Thyroid function\n\n🤖 Our AI translates complex lab values into plain English — no medical degree required.\n\nShall I open the Lab Diagnostics hub?`,
   },
+  {
+    match: ['ayush', 'ayurveda', 'yoga', 'unani', 'siddha', 'homeopathy'],
+    reply: `🌿 **AYUSH & Holistic Wellness**\n\nMediFlow supports the integration of traditional Indian medicine (AYUSH):\n• **Ayurveda**: Dosha-based lifestyle guidance\n• **Yoga**: Posture and breathing (Pranayama) for stress management\n• **Homeopathy**: Alternative therapeutic options\n\n💡 Consult with our certified AYUSH practitioners via video for complementary care.\n\n_Note: Always inform your primary doctor about any holistic treatments._`,
+  },
+  {
+    match: ['pills', 'dosage', 'when to take', 'missing dose'],
+    reply: `💊 **Medication Safety**\n\n• **Generic vs Brand**: Jan Aushadhi generic equivalents provide the same active molecules at a fraction of the cost.\n• **Missed Dose**: Take it as soon as you remember. If it's almost time for your next dose, skip the missed one. **Never double up.**\n• **Storage**: Keep medications in a cool, dry place away from direct sunlight (especially in Indian summers).\n\nShall I check your active prescriptions?`,
+  }
 ];
 
 // ── MEDIBOT CLASS ─────────────────────────────────────────────────────
@@ -144,6 +152,15 @@ class MediBot {
     document.getElementById('medibot-toggle')?.classList.remove('active');
   }
 
+  // Agentic Proactive Follow-up
+  triggerFollowUp(patientName, condition) {
+    this.open();
+    this.addBotMessage(
+      `👋 Hi ${patientName}! It's been 48 hours since your **${condition}** consultation.\n\n` +
+      `How is your recovery progressing? Are you experiencing any side effects from the new medication?`
+    );
+  }
+
   handleSend() {
     const input = document.getElementById('medibot-input');
     const text  = input?.value.trim();
@@ -193,18 +210,35 @@ class MediBot {
       }));
 
       const user = getState('user');
+
+      // Fetch environmental data for context
+      let envData = null;
+      try {
+        const envRes = await api.get('/intelligence/environment?city=Bengaluru');
+        envData = envRes.data;
+      } catch (e) {}
+
       const res  = await api.post('/chat/medibot', {
         message: text,
         history,
         context: {
           role: user?.role,
           location: 'India',
+          weather: envData?.weather,
+          aqi: envData?.aqi,
+          inclusiveMode: document.body.classList.contains('inclusive-mode-active')
         },
       });
 
       this.hideTyping();
       this._typing = false;
-      this.addBotMessage(res.data?.reply || "I'm here to help — could you rephrase that?");
+      const reply = res.data?.reply || "I'm here to help — could you rephrase that?";
+      this.addBotMessage(reply);
+
+      // Auto-read if in inclusive mode
+      if (document.body.classList.contains('inclusive-mode-active')) {
+        this.speakMessage(reply);
+      }
 
     } catch {
       this.hideTyping();
@@ -320,6 +354,16 @@ class MediBot {
 
   showTyping() { document.getElementById('medibot-typing')?.classList.remove('hidden'); }
   hideTyping() { document.getElementById('medibot-typing')?.classList.add('hidden'); }
+
+  speakMessage(text) {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    // Clean markdown bold and bullet points for speech
+    const cleanText = text.replace(/\*\*/g, '').replace(/•/g, '').replace(/\n/g, ' ').trim();
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.rate = 0.9;
+    window.speechSynthesis.speak(utterance);
+  }
 }
 
 const medibot = new MediBot();

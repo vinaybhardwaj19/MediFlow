@@ -56,6 +56,8 @@ export async function initLocationIntelligence() {
         </div>
         <div style="flex:1;min-width:160px;">
           <select class="form-input" id="map-theme-filter" style="padding:6px 12px;height:auto;background:rgba(99,102,241,0.08);border-color:rgba(99,102,241,0.25);color:#a5b4fc;font-weight:700;">
+            <option value="google-silver">⚪ Theme: Google Silver</option>
+            <option value="carto-light">☁️ Theme: Leaflet Light</option>
             <option value="carto-dark">🌌 Theme: CartoDB Dark</option>
             <option value="google-road">🗺️ Theme: Google Road</option>
             <option value="google-satellite">🛰️ Theme: Google Satellite</option>
@@ -142,7 +144,9 @@ function updateMapTileLayer() {
   let url = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
   let opts = { subdomains: 'abcd', maxZoom: 19 };
 
-  if (_currentTheme === 'google-road') {
+  if (_currentTheme === 'carto-light') {
+    url = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+  } else if (_currentTheme === 'google-road' || _currentTheme === 'google-silver') {
     url = 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}';
     opts = { maxZoom: 20 };
   } else if (_currentTheme === 'google-satellite') {
@@ -189,6 +193,29 @@ function setupMap() {
     }
 
     let mapTypeId = window.google.maps.MapTypeId.ROADMAP;
+    let styles = [];
+    if (_currentTheme === 'google-silver') {
+      styles = [
+        { "elementType": "geometry", "stylers": [{ "color": "#f5f5f5" }] },
+        { "elementType": "labels.icon", "stylers": [{ "visibility": "off" }] },
+        { "elementType": "labels.text.fill", "stylers": [{ "color": "#616161" }] },
+        { "elementType": "labels.text.stroke", "stylers": [{ "color": "#f5f5f5" }] },
+        { "featureType": "administrative.land_parcel", "elementType": "labels.text.fill", "stylers": [{ "color": "#bdbdbd" }] },
+        { "featureType": "poi", "elementType": "geometry", "stylers": [{ "color": "#eeeeee" }] },
+        { "featureType": "poi", "elementType": "labels.text.fill", "stylers": [{ "color": "#757575" }] },
+        { "featureType": "poi.park", "elementType": "geometry", "stylers": [{ "color": "#e5e5e5" }] },
+        { "featureType": "poi.park", "elementType": "labels.text.fill", "stylers": [{ "color": "#9e9e9e" }] },
+        { "featureType": "road", "elementType": "geometry", "stylers": [{ "color": "#ffffff" }] },
+        { "featureType": "road.arterial", "elementType": "labels.text.fill", "stylers": [{ "color": "#757575" }] },
+        { "featureType": "road.highway", "elementType": "geometry", "stylers": [{ "color": "#dadada" }] },
+        { "featureType": "road.highway", "elementType": "labels.text.fill", "stylers": [{ "color": "#616161" }] },
+        { "featureType": "road.local", "elementType": "labels.text.fill", "stylers": [{ "color": "#9e9e9e" }] },
+        { "featureType": "transit.line", "elementType": "geometry", "stylers": [{ "color": "#e5e5e5" }] },
+        { "featureType": "transit.station", "elementType": "geometry", "stylers": [{ "color": "#eeeeee" }] },
+        { "featureType": "water", "elementType": "geometry", "stylers": [{ "color": "#c9c9c9" }] },
+        { "featureType": "water", "elementType": "labels.text.fill", "stylers": [{ "color": "#9e9e9e" }] }
+      ];
+    }
     if (_currentTheme === 'google-satellite') mapTypeId = window.google.maps.MapTypeId.HYBRID;
     if (_currentTheme === 'google-terrain') mapTypeId = window.google.maps.MapTypeId.TERRAIN;
 
@@ -196,6 +223,7 @@ function setupMap() {
       center: { lat: _currentPos.lat, lng: _currentPos.lng },
       zoom: 13,
       mapTypeId: mapTypeId,
+      styles: styles,
       disableDefaultUI: false
     });
 
@@ -264,7 +292,7 @@ export async function autoPromptGPS() {
   }
 }
 
-async function reverseGeocode(lat, lng) {
+export async function reverseGeocode(lat, lng) {
   try {
     const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`, {
       headers: { 'Accept-Language': 'en' }
@@ -272,16 +300,23 @@ async function reverseGeocode(lat, lng) {
     if (res.ok) {
       const data = await res.json();
       const addr = data.address || {};
-      _userLocationDetails = {
+      const details = {
+        display_name: data.display_name,
         city: addr.city || addr.town || addr.county || 'Bengaluru',
         state: addr.state || 'Karnataka',
-        area: addr.suburb || addr.neighbourhood || addr.residential || addr.city_district || 'Central'
+        area: addr.suburb || addr.neighbourhood || addr.residential || addr.city_district || 'Central',
+        road: addr.road || '',
+        house_number: addr.house_number || '',
+        postcode: addr.postcode || ''
       };
+      _userLocationDetails = details;
       updateLocationHeaderUI();
+      return details;
     }
   } catch (e) {
     console.warn('Reverse geocode fallback:', e);
   }
+  return null;
 }
 
 function updateLocationHeaderUI() {

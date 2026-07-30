@@ -21,10 +21,13 @@ if (KEY_BUFFER.length !== 32) {
  * @param  {string} plaintext
  * @returns {string} "<iv>:<authTag>:<ciphertext>" — all hex-encoded
  */
-function encrypt(plaintext) {
+function encrypt(plaintext, aad = '') {
   if (plaintext == null) return null;
   const iv     = crypto.randomBytes(IV_LENGTH);
   const cipher = crypto.createCipheriv(ALGORITHM, KEY_BUFFER, iv);
+  if (aad) {
+    cipher.setAAD(Buffer.from(aad, 'utf8'));
+  }
   const encrypted = Buffer.concat([cipher.update(String(plaintext), 'utf8'), cipher.final()]);
   const authTag   = cipher.getAuthTag();
   return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted.toString('hex')}`;
@@ -33,12 +36,16 @@ function encrypt(plaintext) {
 /**
  * Decrypts a value produced by encrypt().
  * @param  {string} ciphertext  "<iv>:<authTag>:<data>" — hex-encoded
+ * @param  {string} [aad=''] Optional AAD used during encryption
  * @returns {string} Original plaintext
  */
-function decrypt(ciphertext) {
+function decrypt(ciphertext, aad = '') {
   if (!ciphertext) return null;
   const [ivHex, authTagHex, dataHex] = ciphertext.split(':');
   const decipher = crypto.createDecipheriv(ALGORITHM, KEY_BUFFER, Buffer.from(ivHex, 'hex'));
+  if (aad) {
+    decipher.setAAD(Buffer.from(aad, 'utf8'));
+  }
   decipher.setAuthTag(Buffer.from(authTagHex, 'hex'));
   const decrypted = Buffer.concat([
     decipher.update(Buffer.from(dataHex, 'hex')),

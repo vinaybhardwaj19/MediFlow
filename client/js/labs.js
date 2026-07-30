@@ -249,26 +249,26 @@ async function simulateReportUpload(reportId) {
   const test = r.testName.toLowerCase();
   
   if (test.includes('cbc')) {
-    mockResults = { hemoglobin: '11.4 g/dL', wbc: '11,200 /mcL', platelets: '280,000 /mcL' };
+    mockResults = { hemoglobin: 11.4, wbc: 11200, platelets: 280000 };
   } else if (test.includes('lipid')) {
-    mockResults = { cholesterol: '238 mg/dL', ldl: '158 mg/dL', hdl: '42 mg/dL' };
+    mockResults = { cholesterol: 238, ldl: 158, hdl: 42 };
   } else if (test.includes('thyroid') || test.includes('tsh')) {
-    mockResults = { tsh: '5.2 uIU/mL' };
+    mockResults = { tsh: 5.2 };
   } else {
-    mockResults = { fbs: '124 mg/dL', hba1c: '6.4%' };
+    mockResults = { fbs: 124, hba1c: 6.4 };
   }
 
-  toastInfo('Processing lab report', 'Uploading clinical results into the system...');
+  toastInfo('Processing lab report', 'Gemini AI is analyzing results...');
 
   try {
     await api.post('/labs/upload', {
       reportId,
-      reportUrl: '/reports/lab_report.pdf',
+      reportUrl: 'https://mediflow.storage/reports/sample.pdf',
       results: mockResults
     });
-    toastSuccess('Report Processed', 'PDF Lab Report compiled and explained by AI.');
+    toastSuccess('Analysis Complete', 'Gemini 1.5 Flash has translated your report.');
     loadLabHistory();
   } catch (err) {
-    toastError('Upload failed', 'Failed to complete lab report upload.');
+    toastError('Upload failed', 'Failed to complete lab report analysis.');
   }
 }

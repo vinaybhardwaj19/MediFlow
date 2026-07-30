@@ -9,63 +9,39 @@
 
 import { getState } from './store.js';
 
-// ── ECG Sparkline Renderer ────────────────────────────────────────────────────
+// ── Waveform Renderers ────────────────────────────────────────────────────────
 
-const ECG_TEMPLATE = [
-  0, 0, 0.05, 0.1, 0, -0.2, 1.0, -0.4, 0, 0.15, 0.1, 0, 0, 0, 0,
-  0, 0.05, 0.1, 0, -0.2, 1.0, -0.4, 0, 0.15, 0.1, 0, 0, 0, 0, 0,
-];
+const ECG_TEMPLATE = [0, 0, 0.05, 0.1, 0, -0.2, 1.0, -0.4, 0, 0.15, 0.1, 0, 0, 0, 0];
+const SPO2_TEMPLATE = [0.2, 0.3, 0.5, 0.7, 0.9, 0.8, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.1, 0.1, 0.1];
 
-class ECGSparkline {
-  /**
-   * Renders a scrolling ECG waveform on a <canvas> element.
-   * @param {HTMLCanvasElement} canvas
-   * @param {string} colour — CSS colour for the waveform line
-   */
-  constructor(canvas, colour = '#f43f5e') {
+class WaveformMonitor {
+  constructor(canvas, colour, template) {
     this.canvas  = canvas;
     this.ctx     = canvas.getContext('2d');
     this.colour  = colour;
-    this.data    = Array(120).fill(0);
+    this.template = template;
+    this.data    = Array(120).fill(0.3);
     this.templateIdx = 0;
     this.rafId   = null;
-    this.bpm     = 72;
-    this._tickCount = 0;
-    this._samplesPerBeat = Math.round(120 / (this.bpm / 60));
-  }
-
-  updateBPM(bpm) {
-    this.bpm = bpm;
-    this._samplesPerBeat = Math.round(60 / (bpm / 60));
-  }
-
-  _nextSample() {
-    const sample = ECG_TEMPLATE[this.templateIdx % ECG_TEMPLATE.length];
-    this.templateIdx++;
-    return sample;
   }
 
   _tick() {
-    // Push one new sample per frame, simulating real waveform
-    this.data.push(this._nextSample());
+    this.data.push(this.template[this.templateIdx % this.template.length]);
+    this.templateIdx++;
     if (this.data.length > 120) this.data.shift();
   }
 
   draw() {
     const { canvas, ctx, data, colour } = this;
+    if (!canvas) return;
     const W = canvas.width  = canvas.offsetWidth;
     const H = canvas.height = canvas.offsetHeight;
     ctx.clearRect(0, 0, W, H);
 
-    // Draw glow background
-    ctx.fillStyle = 'rgba(244,63,94,.04)';
-    ctx.fillRect(0, 0, W, H);
-
-    // Draw ECG line
     ctx.strokeStyle = colour;
     ctx.lineWidth = 1.8;
     ctx.shadowColor = colour;
-    ctx.shadowBlur = 6;
+    ctx.shadowBlur = 4;
     ctx.beginPath();
 
     const mid = H / 2;
@@ -78,16 +54,6 @@ class ECGSparkline {
       i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
     });
     ctx.stroke();
-
-    // Scanning line (neon cursor)
-    const scanX = (this.templateIdx % data.length) * step;
-    ctx.strokeStyle = 'rgba(244,63,94,.6)';
-    ctx.lineWidth = 1;
-    ctx.shadowBlur = 0;
-    ctx.beginPath();
-    ctx.moveTo(scanX, 0);
-    ctx.lineTo(scanX, H);
-    ctx.stroke();
   }
 
   start() {
@@ -99,8 +65,24 @@ class ECGSparkline {
     this.rafId = requestAnimationFrame(loop);
   }
 
-  stop() {
-    if (this.rafId) cancelAnimationFrame(this.rafId);
+  stop() { if (this.rafId) cancelAnimationFrame(this.rafId); }
+}
+
+let _ecgMonitor = null;
+let _spo2Monitor = null;
+
+export function startECGSparkline(canvasId = 'ecg-canvas') {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  if (_ecgMonitor) _ecgMonitor.stop();
+  _ecgMonitor = new WaveformMonitor(canvas, '#f43f5e', ECG_TEMPLATE);
+  _ecgMonitor.start();
+
+  const spo2Canvas = document.getElementById('spo2-canvas');
+  if (spo2Canvas) {
+    if (_spo2Monitor) _spo2Monitor.stop();
+    _spo2Monitor = new WaveformMonitor(spo2Canvas, '#3b82f6', SPO2_TEMPLATE);
+    _spo2Monitor.start();
   }
 }
 
@@ -320,18 +302,7 @@ function updateMonitoringStatus(active) {
   if (label) label.textContent = active ? 'Live Monitoring' : 'Waiting for connection...';
 }
 
-/**
- * Start the ECG sparkline animation on the canvas element.
- * @param {string} canvasId
- */
-export function startECGSparkline(canvasId = 'ecg-canvas') {
-  const canvas = document.getElementById(canvasId);
-  if (!canvas) return;
 
-  if (_ecgSparkline) _ecgSparkline.stop();
-  _ecgSparkline = new ECGSparkline(canvas, 'var(--vital-hr)');
-  _ecgSparkline.start();
-}
 
 /**
  * Ingest a simulated/real biometric reading and update all vital tiles.

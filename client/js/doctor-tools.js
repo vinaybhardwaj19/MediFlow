@@ -141,7 +141,10 @@ export function initPrescriptionPad() {
 
     <!-- Patient notes -->
     <div class="form-group" style="margin-bottom:12px;">
-      <label class="form-label">Clinical Notes</label>
+      <label class="form-label" style="display:flex; justify-content:space-between; align-items:center;">
+        <span>Clinical Notes</span>
+        <button type="button" class="btn btn-sm btn-outline" id="ambient-scribe-btn" style="border-radius:20px; font-size:0.75rem; padding: 2px 10px; border-color:var(--primary); color:var(--primary);">🎤 Start Ambient Scribe</button>
+      </label>
       <textarea class="form-input" id="rx-notes" rows="3" placeholder="Diagnosis, e.g. Patient has chest pain and fever. Started Amoxicillin 500mg once daily for 7 days." style="resize:none;"></textarea>
     </div>
 
@@ -198,6 +201,65 @@ function wireRxPad() {
 
   // Issue prescription
   document.getElementById('generate-rx-btn')?.addEventListener('click', issueRx);
+
+  // Ambient AI Scribe (Web Speech API)
+  let recognition = null;
+  const scribeBtn = document.getElementById('ambient-scribe-btn');
+  const rxNotes = document.getElementById('rx-notes');
+  
+  if (scribeBtn && rxNotes) {
+    scribeBtn.addEventListener('click', () => {
+      if (recognition) {
+        // Stop recognition
+        recognition.stop();
+        recognition = null;
+        scribeBtn.innerHTML = '🎤 Start Ambient Scribe';
+        scribeBtn.style.background = 'transparent';
+        scribeBtn.style.color = 'var(--primary)';
+        toastSuccess('Scribe Stopped', 'Ambient Scribe has finished listening.');
+        return;
+      }
+      
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        toastError('Not Supported', 'Web Speech API is not supported in this browser.');
+        return;
+      }
+
+      recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      
+      recognition.onstart = () => {
+        scribeBtn.innerHTML = '🔴 Listening... (Click to Stop)';
+        scribeBtn.style.background = 'rgba(239, 68, 68, 0.1)';
+        scribeBtn.style.color = '#ef4444';
+        toastSuccess('Scribe Active', 'Ambient Scribe is now listening to the consultation.');
+      };
+      
+      recognition.onresult = (event) => {
+        let finalTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript + ' ';
+          }
+        }
+        if (finalTranscript) {
+          rxNotes.value += (rxNotes.value ? ' ' : '') + finalTranscript.trim();
+        }
+      };
+      
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error', event.error);
+        if (event.error !== 'no-speech') {
+          toastError('Scribe Error', \`Error: \${event.error}\`);
+          scribeBtn.click(); // Reset state
+        }
+      };
+      
+      recognition.start();
+    });
+  }
 
   // AI Parse Clinical Notes
   document.getElementById('ai-parse-notes-btn')?.addEventListener('click', async () => {
@@ -452,10 +514,10 @@ async function issueRx() {
     await api.post('/prescriptions', payload).catch(() => {});
 
     // Save to local storage & dispatch event for Pharmacy & Rider pipeline sync
-    const existingRx = JSON.parse(localStorage.getItem('mf-prescriptions') || '[]');
+    const existingRx = store.getSecureStorage('mf-prescriptions', []);
     existingRx.unshift(payload);
-    localStorage.setItem('mf-prescriptions', JSON.stringify(existingRx));
-    localStorage.setItem('mf-latest-rx', JSON.stringify(payload));
+    store.setSecureStorage('mf-prescriptions', existingRx);
+    store.setSecureStorage('mf-latest-rx', payload);
     window.dispatchEvent(new CustomEvent('mf:prescription-issued', { detail: payload }));
 
     toastSuccess('✅ Prescription Issued', `${_rxDrugs.length} medicine(s) prescribed & dispatched to Pharmacy Queue!`);

@@ -2,13 +2,14 @@ const request = require('supertest');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 const mongoose = require('mongoose');
 const express = require('express');
-const User = require('../../models/user.model');
+const User = require('../../models/User.model');
 
 // Create a minimal app for testing controllers if the main app isn't easily importable
 const app = express();
 app.use(express.json());
+require('express-async-errors');
 
-jest.setTimeout(30000);
+jest.setTimeout(90000);
 jest.mock('../../middleware/auth.middleware', () => ({
   verifyToken: (req, res, next) => {
     if (req.headers.authorization === 'Bearer valid-token') {
@@ -22,6 +23,9 @@ jest.mock('../../middleware/auth.middleware', () => ({
 // Mock routes for testing controllers
 const mockAuthRoutes = require('../../routes/auth.routes'); 
 if (mockAuthRoutes) app.use('/api/v1/auth', mockAuthRoutes);
+
+// Add error handler for testing
+app.use(require('../../middleware/errorHandler.middleware'));
 
 describe('Auth Controller Tests', () => {
   let mongoServer;
@@ -64,19 +68,40 @@ describe('Auth Controller Tests', () => {
   });
 
   it('POST /api/v1/auth/login - success', async () => {
+    await User.create({
+      firstName: 'Login',
+      lastName: 'User',
+      email: 'login@example.com',
+      passwordHash: 'password123',
+      role: 'patient',
+      isVerified: true,
+      isActive: true
+    });
+
     const res = await request(app).post('/api/v1/auth/login').send({
       email: 'login@example.com',
       password: 'password123'
     });
-    expect(res.status).toBeDefined();
+    expect(res.status).toBe(200);
+    expect(res.body.data.accessToken).toBeDefined();
   });
 
   it('POST /api/v1/auth/login - wrong password', async () => {
+    await User.create({
+      firstName: 'Login',
+      lastName: 'User',
+      email: 'login@example.com',
+      passwordHash: 'password123',
+      role: 'patient',
+      isVerified: true,
+      isActive: true
+    });
+
     const res = await request(app).post('/api/v1/auth/login').send({
       email: 'login@example.com',
       password: 'wrongpassword'
     });
-    expect(res.status).toBeDefined();
+    expect(res.status).toBe(401);
   });
 
   it('POST /api/v1/auth/login - nonexistent user', async () => {
@@ -84,7 +109,7 @@ describe('Auth Controller Tests', () => {
       email: 'noexist@example.com',
       password: 'password123'
     });
-    expect(res.status).toBeDefined();
+    expect(res.status).toBe(401);
   });
 
   it('POST /api/v1/auth/refresh-token', async () => {

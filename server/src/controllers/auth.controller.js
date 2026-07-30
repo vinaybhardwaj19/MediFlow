@@ -47,12 +47,10 @@ exports.login = async (req, res) => {
 
   const user = await User.findOne({ email }).select('+passwordHash +refreshTokens');
   if (!user) {
-    console.log(`[Auth Debug] User not found for email: ${email}`);
     throw ApiError.unauthorized('Invalid email or password');
   }
   const isMatch = await user.comparePassword(password);
-  console.log(`[Auth Debug] Checking password for ${email}. Match: ${isMatch}`);
-  
+
   if (!isMatch) throw ApiError.unauthorized('Invalid email or password');
 
   if (!user.isActive) throw ApiError.forbidden('Account is deactivated');
@@ -64,7 +62,11 @@ exports.login = async (req, res) => {
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   user.addRefreshToken(refreshToken, expiresAt);
   user.lastLogin = new Date();
-  await user.save();
+
+  // Optimized save - only if modified
+  if (user.isModified()) {
+    await user.save();
+  }
 
   // httpOnly cookie for refresh token (XSS-safe)
   res.cookie('refreshToken', refreshToken, {

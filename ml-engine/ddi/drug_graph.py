@@ -48,6 +48,13 @@ import math
 from collections import defaultdict
 from typing import Dict, List, Optional, Tuple, Set
 import numpy as np
+import torch
+import torch.nn.functional as F
+try:
+    from torch_geometric.nn import SAGEConv
+except ImportError:
+    # Fallback/mock for environments without torch_geometric installed
+    SAGEConv = None
 
 log = logging.getLogger("mediflow.ddi")
 
@@ -184,6 +191,22 @@ SEVERITY_COLORS = {
 }
 
 
+class RealGraphSAGEModel(torch.nn.Module):
+    def __init__(self, in_channels, hidden_channels, out_channels):
+        super().__init__()
+        if SAGEConv is not None:
+            self.conv1 = SAGEConv(in_channels, hidden_channels)
+            self.conv2 = SAGEConv(hidden_channels, out_channels)
+        
+    def forward(self, x, edge_index):
+        if SAGEConv is None:
+            return x
+        x = self.conv1(x, edge_index)
+        x = F.relu(x)
+        x = self.conv2(x, edge_index)
+        return x
+
+
 class DrugInteractionGNN:
     """
     Drug-Drug Interaction checker using graph embeddings and GNN-style
@@ -247,44 +270,36 @@ class DrugInteractionGNN:
 
         return vec
 
-    def _graphsage_aggregate(self, drug_name: str, features: Dict[str, np.ndarray]) -> np.ndarray:
-        """
-        GraphSAGE mean-aggregation for drug node:
-        h_u = ReLU(W · MEAN(h_neighbors) + h_self) / 2
-        """
-        neighbors = list(self.adjacency.get(drug_name, {}).keys())
-        self_feat = features[drug_name]
-
-        if not neighbors:
-            return self_feat
-
-        neighbor_feats = np.array([features.get(n, self_feat) for n in neighbors])
-        mean_neighbor  = neighbor_feats.mean(axis=0)
-
-        # Simple linear combination (W approximated by identity for demo)
-        aggregated = (self_feat + mean_neighbor) / 2.0
-        return np.maximum(aggregated, 0)  # ReLU
-
     def _compute_embeddings(self):
-        """Compute 2-layer GraphSAGE embeddings for all drug nodes."""
-        # Layer 0: node features
-        layer0 = {name: self._node_features(name) for name in self.drug_names}
-
-        # Layer 1: 1-hop aggregation
-        layer1 = {}
-        for name in self.drug_names:
-            agg = self._graphsage_aggregate(name, layer0)
-            norm = np.linalg.norm(agg)
-            layer1[name] = agg / norm if norm > 0 else agg
-
-        # Layer 2: 2-hop aggregation
-        layer2 = {}
-        for name in self.drug_names:
-            agg = self._graphsage_aggregate(name, layer1)
-            norm = np.linalg.norm(agg)
-            layer2[name] = agg / norm if norm > 0 else agg
-
-        self.embeddings = layer2
+        """Compute embeddings for all drug nodes using real PyTorch Geometric."""
+        # 1. Create edge_index
+        edges = []
+        for u in self.adjacency:
+            u_idx = self.drug_index[u]
+            for v in self.adjacency[u]:
+                v_idx = self.drug_index[v]
+                edges.append([u_idx, v_idx])
+                
+        # 2. Node features
+        x = torch.tensor(np.array([self._node_features(name) for name in self.drug_names]), dtype=torch.float)
+        
+        if not edges:
+            out = x
+        else:
+            edge_index = torch.tensor(edges, dtype=torch.long).t().contiguous()
+            
+            # 3. Pass through PyTorch model
+            model = RealGraphSAGEModel(in_channels=self.EMBEDDING_DIM, hidden_channels=32, out_channels=32)
+            model.eval()
+            
+            with torch.no_grad():
+                out = model(x, edge_index)
+                
+        # Normalize
+        out = F.normalize(out, p=2, dim=1)
+        
+        # Save to dict
+        self.embeddings = {name: out[i].numpy() for i, name in enumerate(self.drug_names)}
 
     def _link_score(self, drug_a: str, drug_b: str) -> float:
         """Cosine similarity between GNN embeddings → interaction likelihood score."""

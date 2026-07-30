@@ -42,6 +42,9 @@ const timelineRoutes     = require('./routes/timeline.routes');
 const companionRoutes    = require('./routes/companion.routes');
 const paymentRoutes      = require('./routes/payment.routes');
 const dataRightsRoutes   = require('./routes/data-rights.routes');
+const familyRoutes       = require('./routes/family.routes');
+
+const { fetchWeather, fetchAQI } = require('./utils/weather');
 
 const app = express();
 
@@ -103,6 +106,16 @@ app.get('/health', (_req, res) =>
 
 app.get('/metrics', metricsEndpoint);
 
+// ─── Environmental Intelligence (AQI + Weather) ─────────────────────────────
+app.get('/api/v1/intelligence/environment', async (req, res) => {
+  const { lat, lng, city = 'Bengaluru' } = req.query;
+  const [weather, aqi] = await Promise.all([
+    fetchWeather(city),
+    lat && lng ? fetchAQI(lat, lng) : Promise.resolve(null)
+  ]);
+  res.json({ weather, aqi });
+});
+
 // ─── Client Config (Expose safe environment variables) ────────────────────────
 app.get('/api/v1/config', (_req, res) => {
   res.json({
@@ -128,6 +141,7 @@ app.use('/api/v1/timeline',      timelineRoutes);
 app.use('/api/v1/companion',     companionRoutes);
 app.use('/api/v1/payment',       paymentRoutes);
 app.use('/api/v1/data-rights',   dataRightsRoutes);
+app.use('/api/v1/family',        familyRoutes);
 
 // ─── Serve Client SPA (must be AFTER all API routes) ─────────────────────────
 // This lets the frontend load from http://localhost:5000 without file:// issues.

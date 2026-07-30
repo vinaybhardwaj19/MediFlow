@@ -10,19 +10,22 @@ CONTACT EMAIL  : vinaybhardwajoct1@gmail.com
 OFFICIAL SUBMISSION LINKS:
 ================================================================================
 
-1. DEMO VIDEO LINK (Loom 5-Minute Video):
+1. LIVE DEMO URL (Firebase Hosting):
+   https://device-streaming-c8146bb5.web.app
+
+2. DEMO VIDEO LINK (Loom 5-Minute Video):
    https://www.loom.com/share/dfe71dd0eec5469e8790c881b0fa37a1
 
-2. GITHUB REPOSITORY LINK:
+3. GITHUB REPOSITORY LINK:
    https://github.com/vinaybhardwaj19/MediFlow
 
-3. TECHNICAL DOCUMENTATION (README.md with Visual Flowcharts):
+4. TECHNICAL DOCUMENTATION (README.md with Visual Flowcharts):
    https://github.com/vinaybhardwaj19/MediFlow/blob/master/README.md
 
-4. ARCHITECTURE & SECURITY SPECIFICATIONS (ARCHITECTURE.md):
+5. ARCHITECTURE & SECURITY SPECIFICATIONS (ARCHITECTURE.md):
    https://github.com/vinaybhardwaj19/MediFlow/blob/master/docs/ARCHITECTURE.md
 
-5. 5-PAGE PRESENTATION SLIDE DECK SCRIPT:
+6. 5-PAGE PRESENTATION SLIDE DECK SCRIPT:
    https://github.com/vinaybhardwaj19/MediFlow/blob/master/VIDEO_SCRIPT_5MIN.md
 
 ================================================================================

@@ -16,7 +16,7 @@
 
 > *"India has 0.7 doctors per 1,000 people. MediFlow's AI handles the triage, the drug safety check, and the anomaly alert — so every available doctor focuses on patients who truly need them."*
 
-### 🎬 [Watch Demo Video (3 min)](https://YOUR_VIDEO_LINK_HERE) &nbsp;|&nbsp; 🚀 [Live Demo](http://localhost:5000) &nbsp;|&nbsp; 📐 [Architecture Docs](docs/ARCHITECTURE.md)
+### 🎬 [Watch Demo Video (3 min)](https://www.loom.com/share/dfe71dd0eec5469e8790c881b0fa37a1) &nbsp;|&nbsp; 🚀 [Live Demo](https://device-streaming-c8146bb5.web.app) &nbsp;|&nbsp; 📐 [Architecture Docs](docs/ARCHITECTURE.md)
 
 [Problem](#-the-problem-we-solve) · [Architecture](#-system-architecture) · [AI Modules](#-ai-modules--8-published-algorithms) · [Quick Start](#-quick-start) · [Features](#-platform-features) · [Research](#-research-references)
 

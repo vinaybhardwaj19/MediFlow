@@ -64,6 +64,7 @@ export function initConsultation() {
   // Clinical filters, snapshot & 8K Resolution Presets
   document.getElementById('video-filter-select')?.addEventListener('change', applyVideoFilter);
   document.getElementById('video-quality-select')?.addEventListener('change', apply8KVideoPreset);
+  document.getElementById('btn-video-blur')?.addEventListener('click', toggleBackgroundBlur);
   document.getElementById('btn-call-snapshot')?.addEventListener('click', captureVideoSnapshot);
 
   // AI Scribe tab toggles
@@ -627,6 +628,26 @@ function hideWaiting() {
 
 let vitalsInterval = null;
 let scribeInterval = null;
+let isBlurred = false;
+
+function toggleBackgroundBlur() {
+  isBlurred = !isBlurred;
+  const localVideo = document.getElementById('local-video');
+  const btn = document.getElementById('btn-video-blur');
+
+  if (localVideo) {
+    localVideo.style.filter = isBlurred
+      ? (localVideo.style.filter === 'none' ? 'blur(10px)' : localVideo.style.filter + ' blur(10px)')
+      : localVideo.style.filter.replace('blur(10px)', '').trim() || 'none';
+  }
+
+  if (btn) {
+    btn.style.background = isBlurred ? 'var(--accent)' : 'rgba(0,0,0,0.6)';
+    btn.textContent = isBlurred ? '✨ Blurred' : '✨ Blur';
+  }
+
+  toastInfo(isBlurred ? 'Blur Enabled' : 'Blur Disabled', 'Background privacy mode toggled.');
+}
 
 function startCallTimer() {
   callStartTime = Date.now();

@@ -14,20 +14,27 @@ function isEncrypted(val) {
   return parts.length === 3 && parts.every(part => /^[0-9a-fA-F]+$/.test(part));
 }
 
-function safeEncrypt(val) {
+function safeEncrypt(val, aad = '') {
   if (!val || typeof val !== 'string' || isEncrypted(val)) return val;
   try {
-    return encrypt(val);
+    return encrypt(val, aad);
   } catch (err) {
     return val;
   }
 }
 
-function safeDecrypt(val) {
+function safeDecrypt(val, aad = '') {
   if (!val || typeof val !== 'string' || !isEncrypted(val)) return val;
   try {
-    return decrypt(val);
+    return decrypt(val, aad);
   } catch (err) {
+    if (aad) {
+      try {
+        return decrypt(val, '');
+      } catch (e2) {
+        return val;
+      }
+    }
     return val;
   }
 }
@@ -64,17 +71,19 @@ appointmentSchema.index({ doctorId:  1, scheduledAt: -1 });
 
 // ─── PHI Encryption & Decryption Hooks ──────────────────────────────────────────
 appointmentSchema.pre('save', function (next) {
-  if (this.notes) this.notes = safeEncrypt(this.notes);
-  if (this.chiefComplaint) this.chiefComplaint = safeEncrypt(this.chiefComplaint);
-  if (this.cancellationReason) this.cancellationReason = safeEncrypt(this.cancellationReason);
+  const docId = this._id ? this._id.toString() : '';
+  if (this.notes) this.notes = safeEncrypt(this.notes, docId + ':notes');
+  if (this.chiefComplaint) this.chiefComplaint = safeEncrypt(this.chiefComplaint, docId + ':chiefComplaint');
+  if (this.cancellationReason) this.cancellationReason = safeEncrypt(this.cancellationReason, docId + ':cancellationReason');
   next();
 });
 
 function decryptAppointment(doc) {
   if (!doc) return;
-  if (doc.notes) doc.notes = safeDecrypt(doc.notes);
-  if (doc.chiefComplaint) doc.chiefComplaint = safeDecrypt(doc.chiefComplaint);
-  if (doc.cancellationReason) doc.cancellationReason = safeDecrypt(doc.cancellationReason);
+  const docId = doc._id ? doc._id.toString() : '';
+  if (doc.notes) doc.notes = safeDecrypt(doc.notes, docId + ':notes');
+  if (doc.chiefComplaint) doc.chiefComplaint = safeDecrypt(doc.chiefComplaint, docId + ':chiefComplaint');
+  if (doc.cancellationReason) doc.cancellationReason = safeDecrypt(doc.cancellationReason, docId + ':cancellationReason');
 }
 
 appointmentSchema.post('findOne', function (doc) {

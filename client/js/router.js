@@ -17,8 +17,9 @@ export function registerHook(page, fn) { _hooks[page] = fn; }
 function showPage(name) {
   if (!PAGES.includes(name)) name = 'home';
 
-  // Auth guard
+  // Save intended destination if redirecting to login
   if (AUTH_REQUIRED.has(name) && !getState('user')) {
+    sessionStorage.setItem('mf_redirect', name);
     window.dispatchEvent(new CustomEvent('mf:need-auth', { detail: name }));
     return;
   }
@@ -37,8 +38,8 @@ function showPage(name) {
     }
   });
 
-  // Update active nav link
-  document.querySelectorAll('.nav-link').forEach(a => {
+  // Update active nav link & mobile nav item
+  document.querySelectorAll('.nav-link, .mob-nav-item').forEach(a => {
     a.classList.toggle('active', a.dataset.page === name);
   });
 

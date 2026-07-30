@@ -110,7 +110,7 @@ exports.medibotChat = async (req, res) => {
     return ApiResponse.ok(res, { reply });
   }
 
-  // Personalization Context
+  // Personalization & Environmental Context
   let userContext = "";
   if (req.user) {
     userContext = `\nYou are talking to ${req.user.firstName} ${req.user.lastName}, who is a ${req.user.role} on the platform.`;
@@ -121,7 +121,27 @@ exports.medibotChat = async (req, res) => {
     }
   }
 
-  const defaultSystemPrompt = `You are MediBot, the AI health assistant for MediFlow — India's most advanced telemedicine platform.${userContext}
+  // Environmental context (AQI/Weather)
+  let envContext = "";
+  if (req.body.context?.weather) {
+    const w = req.body.context.weather;
+    envContext += `\nENVIRONMENTAL CONTEXT: It's currently ${w.temp}°C and ${w.description} in the user's city.`;
+  }
+  if (req.body.context?.aqi) {
+    const a = req.body.context.aqi;
+    envContext += ` AQI is ${a.index} (${a.label}).`;
+    if (a.index >= 4) {
+      envContext += " MANDATORY ADVISORY: Warn the user about poor air quality and recommend staying indoors or using a mask.";
+    }
+  }
+
+  // Inclusive Mode (Simple Language) context
+  let simpleContext = "";
+  if (req.body.context?.inclusiveMode) {
+    simpleContext = "\nIMPORTANT: The user is using 'Simple Mode'. Use VERY SIMPLE, non-medical language. Avoid jargon. Give instructions like you are talking to a child or someone who cannot read well.";
+  }
+
+  const defaultSystemPrompt = `You are MediBot, the AI health assistant for MediFlow — India's most advanced telemedicine platform.${userContext}${envContext}${simpleContext}
 
 IDENTITY & MISSION:
 - You serve patients across India, including Tier-2 and Tier-3 cities with limited specialist access.
@@ -149,6 +169,17 @@ COMMUNICATION STYLE:
 NEVER: Diagnose definitively. Prescribe doses. Share personal patient data.`;
 
   const finalSystemPrompt = customPrompt || defaultSystemPrompt;
+
+  // ── Gemini 1.5 Flash Optimization (Primary Path) ──────────────────────────
+  const { callGemini } = require('../utils/gemini');
+  try {
+    const geminiReply = await callGemini(message, finalSystemPrompt);
+    if (geminiReply) {
+      return ApiResponse.ok(res, { reply: geminiReply });
+    }
+  } catch (err) {
+    console.warn('[MediBot] Gemini Flash failed, falling back to Pro models');
+  }
 
   const messages = [
     { role: 'system', content: finalSystemPrompt },

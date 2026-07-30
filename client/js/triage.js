@@ -162,15 +162,16 @@ export function initTriage() {
     document.getElementById('result-conf-fill').style.width  = `${ml.confidence * 100}%`;
 
     const uc = URGENCY_CONFIG[ml.urgencyLevel] || URGENCY_CONFIG.routine;
-    document.getElementById('result-badge').innerHTML =
-      `<span class="badge ${uc.badge}">${uc.icon} ${ml.urgencyLevel.toUpperCase()}</span>`;
+    document.getElementById('result-badge').innerHTML = window.DOMPurify 
+      ? window.DOMPurify.sanitize(`\n      <span class="badge ${uc.badge}">${uc.icon} ${ml.urgencyLevel.toUpperCase()}</span>\n    `)
+      : `<span class="badge ${uc.badge}">${uc.icon} ${ml.urgencyLevel.toUpperCase()}</span>`;
 
     // ── Plain-Language Layman Summary (Low-Literacy & Accessibility Support) ─────
     const laymanEl = document.getElementById('result-layman-summary') || createLaymanSummaryEl();
     const laymanText = getLaymanText(ml);
     laymanEl.innerHTML = `
       <div class="layman-card" style="background:${uc.color}15; border: 2px solid ${uc.color}; border-radius: 12px; padding: 16px; margin: 16px 0;">
-        <div style="display:flex; align-items:center; justify-between; margin-bottom: 8px;">
+        <div style="display:flex; align-items:center; justify-content: space-between; margin-bottom: 8px;">
           <h3 style="margin:0; font-size:1.15rem; color:${uc.color}; display:flex; align-items:center; gap:10px;">
             <img src="${uc.image}" alt="Status" style="width:32px; height:32px; border-radius:8px; object-fit:cover; border:1px solid ${uc.color}40;" />
             <span>${uc.icon} Plain-Language Summary / सरल भाषा संदेश</span>
@@ -315,7 +316,7 @@ export function initTriage() {
       laymanSummary: laymanText.en,
     };
     setState('activeTriage', activeTriageRecord);
-    localStorage.setItem('mf-active-triage', JSON.stringify(activeTriageRecord));
+    store.setSecureStorage('mf-active-triage', activeTriageRecord);
     window.dispatchEvent(new CustomEvent('mf:triage-completed', { detail: activeTriageRecord }));
 
     result.classList.remove('hidden');
@@ -325,14 +326,33 @@ export function initTriage() {
 
   // Book/Route to Doctor from triage result
   document.getElementById('book-from-triage')?.addEventListener('click', () => {
-    const activeTriage = getState('activeTriage') || JSON.parse(localStorage.getItem('mf-active-triage'));
-    if (activeTriage) {
-      toastInfo('Clinical Handoff', `Transferring ${activeTriage.recommendedSpecialty} triage data to Doctor Review Queue...`);
-    }
-    navigate('consultation');
+    const activeTriage = getState('activeTriage') || store.getSecureStorage('mf-active-triage', {});
+    const recSpec = activeTriage?.recommendedSpecialty || 'General Physician';
+    const symptoms = activeTriage?.symptoms || [];
+
+    const specLower = recSpec.toLowerCase();
+    let specKey = 'general';
+    if (specLower.includes('cardio')) specKey = 'cardiology';
+    else if (specLower.includes('neuro')) specKey = 'neurology';
+    else if (specLower.includes('pulmo') || specLower.includes('resp')) specKey = 'pulmonology';
+    else if (specLower.includes('endocrin')) specKey = 'endocrinology';
+    else if (specLower.includes('derm')) specKey = 'dermatology';
+    else if (specLower.includes('ortho')) specKey = 'orthopedics';
+
+    toastSuccess('AI Clinical Handoff 🩺', `Pre-matched ${recSpec} specialist based on your symptoms.`);
+
+    import('./router.js').then(m => m.navigate('dashboard'));
+
     setTimeout(() => {
-      document.getElementById('doctor-tools-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 400);
+      // Activate appointments sidebar item
+      const apptSidebar = document.querySelector('.sidebar-item[data-section="appointments"]');
+      if (apptSidebar) apptSidebar.click();
+
+      // Initialize booking widget with pre-matched specialty & symptoms
+      import('./appointments.js').then(m => {
+        if (m.initAppointmentBooking) m.initAppointmentBooking(specKey, symptoms.join(', '));
+      }).catch(err => console.warn('Booking widget load error:', err));
+    }, 250);
   });
 
   // Reset

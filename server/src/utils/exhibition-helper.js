@@ -221,7 +221,7 @@ async function autoSeed() {
       if (doctorProfileCount === 0) {
         await Doctor.create({
           userId         : doctorUser._id,
-          licenseNumber  : encrypt('MCI-2024-KA-87654'), // AES-256 encrypted
+          licenseNumber  : encrypt('MCI-2024-KA-87654', doctorUser._id.toString() + ':licenseNumber'), // AES-256 encrypted with AAD
           specializations: ['Cardiology', 'Internal Medicine'],
           subSpecialties : ['Interventional Cardiology', 'Echocardiography'],
           qualifications : [

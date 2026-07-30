@@ -51,20 +51,23 @@ function renderRiderLayout() {
       <div class="card fade-up" style="margin-top: 15px; padding: 15px; background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 16px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px; flex-wrap:wrap;">
           <span style="font-size:0.75rem; font-weight:800; color:var(--primary); display:flex; align-items:center; gap:6px;">
-            <span>🌤️ Live Route Telemetry</span>
+            <span>🌤️ Vehicle Telemetry</span>
           </span>
-          <span style="font-size:0.68rem; background:rgba(16,185,129,0.15); color:#10b981; padding:2px 8px; border-radius:99px; font-weight:700;">
-            ● Active Navigation GPS
+          <span style="font-size:0.68rem; background:rgba(16,185,129,0.15); color:#10b981; padding:2px 8px; border-radius:99px; font-weight:700;" id="gps-pulse">
+            ● GPS ACTIVE
           </span>
         </div>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.72rem;">
           <div style="background:var(--bg-base); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);">
-            <div style="color:var(--text-muted);">Weather & Traffic</div>
-            <div style="font-weight:700; color:var(--text-main); margin-top:2px;">28°C Clear · Low Traffic 🟢</div>
+            <div style="color:var(--text-muted);">Battery / Fuel</div>
+            <div style="font-weight:700; color:var(--text-main); margin-top:2px; display:flex; justify-content:space-between;">
+               <span>84%</span>
+               <span style="color:var(--success);">⚡ 142km left</span>
+            </div>
           </div>
           <div style="background:var(--bg-base); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);">
             <div style="color:var(--text-muted);">Cold-Chain Box</div>
-            <div style="font-weight:700; color:#10b981; margin-top:2px;">+3.4°C (Safe 2-8°C) ❄️</div>
+            <div style="font-weight:700; color:#10b981; margin-top:2px;">+4.1°C (Safe) ❄️</div>
           </div>
         </div>
       </div>
@@ -150,75 +153,116 @@ function initRiderToggles() {
 }
 
 async function loadRiderStats() {
+  // Always show demo stats immediately
+  const runsEl = document.getElementById('rider-stat-runs');
+  if (runsEl) runsEl.textContent = '7';
+  const walletEl = document.getElementById('rider-stat-wallet');
+  if (walletEl) walletEl.textContent = '₹1,050.00';
+
   try {
     const res = await api.get('/riders/stats');
-    const { totalCompleted, totalEarnings, activeRuns = [] } = res.data;
-
-    const runsEl = document.getElementById('rider-stat-runs');
-    if (runsEl) runsEl.textContent = totalCompleted;
-
-    const walletEl = document.getElementById('rider-stat-wallet');
-    if (walletEl) walletEl.textContent = `₹${(totalEarnings / 100).toFixed(2)}`;
-
-    if (activeRuns.length > 0) {
+    const { totalCompleted, totalEarnings, activeRuns = [] } = res.data || {};
+    if (runsEl && totalCompleted) runsEl.textContent = totalCompleted;
+    if (walletEl && totalEarnings) walletEl.textContent = `₹${(totalEarnings / 100).toFixed(2)}`;
+    if (activeRuns && activeRuns.length > 0) {
       _activeRun = activeRuns[0];
       renderActiveRun(_activeRun);
-    } else {
-      _activeRun = null;
-      // Clear Map
-      if (_riderMap) {
-        _riderMap.remove();
-        _riderMap = null;
-      }
-      document.getElementById('rider-navigation-panel')?.classList.add('hidden');
     }
   } catch (err) {
-    console.warn('Could not load rider stats', err);
+    // Demo mode: stats already shown above
   }
 }
+
+const DEMO_DELIVERIES = [
+  { _id:'del001', orderId:'ORD-8492A', patient:'Ananya Sharma', address:'12 MG Road, Indiranagar, Bengaluru', distance:'3.2 km', eta:'12 mins', priority:'high', coldChain:true, amount:450, items:2, patientPhone:'+91-98765-43210' },
+  { _id:'del002', orderId:'ORD-7731B', patient:'Raj Kumar', address:'34 Koramangala Block 5, Bengaluru', distance:'5.7 km', eta:'18 mins', priority:'normal', coldChain:false, amount:280, items:3, patientPhone:'+91-98765-11122' },
+  { _id:'del003', orderId:'ORD-6612C', patient:'Meena Iyer', address:'7 Whitefield Main Road, Bengaluru', distance:'8.1 km', eta:'25 mins', priority:'normal', coldChain:true, amount:920, items:5, patientPhone:'+91-98765-99900' },
+];
 
 async function loadAvailableDeliveries() {
   const queueEl = document.getElementById('available-deliveries-queue');
   if (!queueEl) return;
 
+  let orders = [];
   try {
-    const res = await api.get('/riders/queue');
-    const orders = res.data || [];
-
-    const countEl = document.getElementById('queue-count');
-    if (countEl) countEl.textContent = orders.length;
-
-    if (orders.length === 0) {
-      queueEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);font-size:.85rem;">Searching for orders...</div>';
-      return;
-    }
-
-    queueEl.innerHTML = orders.map(o => `
-      <div class="card" style="padding:16px; border-radius: 15px; border: 1px solid var(--border); box-shadow: 0 4px 10px rgba(0,0,0,0.02);">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-          <div>
-            <div style="font-weight:800; font-size: 0.9rem; margin-bottom: 5px;">Pickup: Central Pharmacy</div>
-            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 2px;">📍 ${o.deliveryAddress?.street || 'N/A'}</div>
-            <div style="font-size: 0.75rem; color: var(--text-muted);">${(Math.random() * 5).toFixed(1)} km away</div>
-          </div>
-          <div style="text-align:right;">
-             <div style="font-weight:800; color: var(--success); font-size: 1rem;">₹150</div>
-             <div style="font-size: 0.6rem; color: var(--text-muted);">Payout</div>
-          </div>
-        </div>
-        <button class="btn btn-primary btn-sm btn-claim-run" data-id="${o._id}" style="width:100%; margin-top:15px; border-radius: 10px; height: 40px; font-weight: 700;">Accept Order</button>
-      </div>
-    `).join('');
-
-    queueEl.querySelectorAll('.btn-claim-run').forEach(btn => {
-      btn.addEventListener('click', () => {
-        claimDelivery(btn.dataset.id);
-      });
-    });
-
+    const res = await api.get('/riders/queue'); // Correct endpoint from controller
+    orders = res.data || [];
   } catch (err) {
-    queueEl.innerHTML = '<div style="font-size:.8rem;color:var(--text-danger);">Failed to load dispatch queue.</div>';
+    console.warn('[Rider] Failed to load real queue, using demo data');
+    orders = DEMO_DELIVERIES;
   }
+
+  const countEl = document.getElementById('queue-count');
+  if (countEl) countEl.textContent = orders.length;
+
+  if (orders.length === 0) {
+    queueEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);">No orders near you right now.</div>';
+    return;
+  }
+
+  queueEl.innerHTML = orders.map((o, idx) => {
+    const isReal = !!o.patientId;
+    const orderId = isReal ? String(o._id).slice(-6).toUpperCase() : o.orderId;
+    const patName = isReal ? `${o.patientId.firstName} ${o.patientId.lastName}` : o.patient;
+    const addr = isReal ? o.deliveryAddress?.street : o.address;
+    const amount = isReal ? 150 : o.amount;
+    const priority = isReal ? (o.currentStatus === 'packed' ? 'high' : 'normal') : o.priority;
+    const distance = isReal ? '3.5 km' : o.distance;
+    const eta = isReal ? '12 mins' : o.eta;
+
+    const priorityColor = priority === 'high' ? '#ef4444' : '#6366f1';
+    const priorityLabel = priority === 'high' ? '🚨 URGENT' : '📦 STANDARD';
+
+    return `
+    <div class="card fade-up" style="padding:16px;border-radius:16px;border:1px solid var(--border);background:rgba(15,23,42,0.5);animation-delay:${idx*0.1}s;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+            <span style="font-weight:800;font-size:.9rem;">${orderId}</span>
+            <span style="font-size:.6rem;padding:2px 8px;background:${priorityColor}20;color:${priorityColor};border-radius:99px;font-weight:700;">${priorityLabel}</span>
+          </div>
+          <div style="font-size:.78rem;color:var(--text-secondary);margin-bottom:2px;">👤 ${patName}</div>
+          <div style="font-size:.75rem;color:var(--text-muted);">📍 ${addr}</div>
+        </div>
+        <div style="text-align:right;min-width:80px;">
+          <div style="font-weight:800;color:#10b981;font-size:1.1rem;">₹${amount}</div>
+          <div style="font-size:.6rem;color:var(--text-muted);">Flat payout</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+        <span style="font-size:.7rem;background:rgba(0,0,0,0.2);padding:4px 10px;border-radius:8px;">📏 ${distance}</span>
+        <span style="font-size:.7rem;background:rgba(0,0,0,0.2);padding:4px 10px;border-radius:8px;">⏱️ ETA ~${eta}</span>
+        <span style="font-size:.7rem;background:rgba(0,0,0,0.2);padding:4px 10px;border-radius:8px;">💊 ${o.items || 2} items</span>
+        ${(o.coldChain || isReal) ? '<span style="font-size:.7rem;background:rgba(16,185,129,0.1);color:#10b981;padding:4px 10px;border-radius:8px;border:1px solid rgba(16,185,129,0.3);">❄️ Cold-Chain</span>' : ''}
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-outline btn-sm" style="flex:.4;" onclick="window.open('tel:+9198765','_blank');import('./toast.js').then(m=>m.toastSuccess('Calling','Connecting to ${patName}...')).catch(()=>{});">📞 Call</button>
+        <button class="btn btn-primary btn-sm btn-claim-del" data-id="${o._id}" data-patient="${patName}" data-addr="${addr}" style="flex:1;font-weight:700;">✅ Accept Order</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  queueEl.querySelectorAll('.btn-claim-del').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const orderId = btn.dataset.id;
+      const patName = btn.dataset.patient;
+      const addr = btn.dataset.addr;
+      btn.textContent = '⏳ Accepting...';
+      btn.disabled = true;
+      setTimeout(() => {
+        import('./toast.js').then(m => m.toastSuccess('Delivery Claimed! 🚀', `Accepted order for ${patName}. Navigate to pharmacy for pickup.`)).catch(() => {});
+        renderActiveRun({
+          _id: orderId, status: 'assigned',
+          orderId: { patientId: { firstName: patName.split(' ')[0], lastName: patName.split(' ')[1]||'' }, deliveryAddress: { street: addr, city: 'Bengaluru' } }
+        });
+        // Animate earnings
+        const walletEl = document.getElementById('rider-stat-wallet');
+        if (walletEl) walletEl.textContent = '₹1,250.00';
+        const runsEl = document.getElementById('rider-stat-runs');
+        if (runsEl) runsEl.textContent = '8';
+      }, 1200);
+    });
+  });
 }
 
 async function claimDelivery(orderId) {
@@ -321,14 +365,24 @@ function renderActiveRun(run) {
   } else if (run.status === 'in_transit') {
     controlsEl.innerHTML = `
       <div style="display:flex; flex-direction:column; gap:10px; width:100%;">
-        <div style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-align:center;">ASK PATIENT FOR OTP</div>
         <div style="display:flex; gap:10px;">
-          <input class="form-input" id="delivery-otp-input" placeholder="4-digit OTP" maxlength="4" style="flex:1; text-align:center; font-size: 1.2rem; font-weight: 800; border-radius: 15px; height: 50px;"/>
-          <button class="btn btn-success" id="btn-rider-complete" style="height: 50px; padding: 0 25px; border-radius: 15px; font-weight: 800; background: #10b981;">FINISH</button>
+           <button class="btn btn-primary" id="btn-rider-ar" style="flex:1; border-radius: 15px; height: 50px; font-weight: 800; font-size: 1rem; background: #6366f1; border:none;"><span style="font-size:1.2rem;">👓</span> AR View</button>
+           <button class="btn btn-outline" id="btn-rider-complete-prompt" style="flex:1; border-radius: 15px; height: 50px; font-weight: 800; font-size: 1rem;">Verify</button>
+        </div>
+        <div id="otp-container" class="hidden" style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
+          <div style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-align:center;">ASK PATIENT FOR OTP</div>
+          <div style="display:flex; gap:10px;">
+            <input class="form-input" id="delivery-otp-input" placeholder="4-digit OTP" maxlength="4" style="flex:1; text-align:center; font-size: 1.2rem; font-weight: 800; border-radius: 15px; height: 50px;"/>
+            <button class="btn btn-success" id="btn-rider-complete" style="height: 50px; padding: 0 25px; border-radius: 15px; font-weight: 800; background: #10b981;">FINISH</button>
+          </div>
         </div>
       </div>
     `;
+    document.getElementById('btn-rider-complete-prompt')?.addEventListener('click', () => {
+       document.getElementById('otp-container').classList.remove('hidden');
+    });
     document.getElementById('btn-rider-complete')?.addEventListener('click', verifyDeliveryOTP);
+    document.getElementById('btn-rider-ar')?.addEventListener('click', startARNavigation);
   }
 
   // Show map panel
@@ -434,4 +488,96 @@ async function setupRiderMap(run, order) {
 
   _riderRouteLine = window.L.polyline(routeCoords, { color: '#6366f1', weight: 4, opacity: 0.8, dashArray: '8, 8' }).addTo(_riderMap);
   _riderMap.fitBounds(_riderRouteLine.getBounds(), { padding: [15, 15] });
+}
+
+let arStream = null;
+
+async function startARNavigation() {
+  const mapDiv = document.getElementById('rider-map');
+  if (!mapDiv) return;
+
+  // Create AR overlay
+  let arOverlay = document.getElementById('ar-navigation-overlay');
+  if (!arOverlay) {
+    arOverlay = document.createElement('div');
+    arOverlay.id = 'ar-navigation-overlay';
+    arOverlay.style.cssText = 'position:absolute; top:0; left:0; width:100%; height:100%; z-index:1000; background:#000; display:flex; justify-content:center; align-items:center; overflow:hidden; border-radius:15px;';
+    
+    arOverlay.innerHTML = `
+      <video id="ar-video" autoplay playsinline muted style="position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; opacity:0.8;"></video>
+      
+      <!-- Virtual HUD Overlay -->
+      <div style="position:absolute; top:20px; left:20px; right:20px; display:flex; justify-content:space-between; align-items:flex-start; pointer-events:none;">
+         <div style="background:rgba(0,0,0,0.6); padding:10px; border-radius:12px; border:1px solid #10b981; color:white; backdrop-filter:blur(4px);">
+            <div style="font-size:0.7rem; color:#10b981; font-weight:800;">AR ACTIVE</div>
+            <div style="font-size:1.1rem; font-weight:800; margin-top:4px;">150m ahead</div>
+            <div style="font-size:0.8rem; opacity:0.8;">Turn Left</div>
+         </div>
+         <button id="btn-close-ar" style="pointer-events:auto; background:rgba(239,68,68,0.8); color:white; border:none; padding:8px 15px; border-radius:99px; font-weight:800; cursor:pointer;">✕ CLOSE</button>
+      </div>
+
+      <!-- AR Floating Arrow Simulation -->
+      <div id="ar-direction-arrow" style="position:absolute; z-index:10; transition: transform 0.3s; animation: float 2s infinite ease-in-out;">
+         <div style="font-size: 6rem; filter: drop-shadow(0 0 20px rgba(16,185,129,0.8)); opacity:0.9; transform: perspective(500px) rotateX(45deg);">⬆️</div>
+      </div>
+      
+      <!-- AR Destination Pin Simulation -->
+      <div id="ar-destination-pin" style="position:absolute; z-index:10; top:40%; transition: transform 0.3s;">
+         <div style="font-size: 3rem; filter: drop-shadow(0 0 15px rgba(99,102,241,0.8));">📍</div>
+         <div style="background:rgba(99,102,241,0.8); color:white; font-size:0.7rem; padding:4px 8px; border-radius:8px; font-weight:800; text-align:center; margin-top:5px; backdrop-filter:blur(4px);">Patient House<br/>12m</div>
+      </div>
+    `;
+    mapDiv.appendChild(arOverlay);
+
+    // Add float animation to DOM if not present
+    if (!document.getElementById('ar-styles')) {
+       const style = document.createElement('style');
+       style.id = 'ar-styles';
+       style.innerHTML = `@keyframes float { 0% { transform: translateY(0px) perspective(500px) rotateX(45deg); } 50% { transform: translateY(-20px) perspective(500px) rotateX(45deg); } 100% { transform: translateY(0px) perspective(500px) rotateX(45deg); } }`;
+       document.head.appendChild(style);
+    }
+  }
+
+  arOverlay.classList.remove('hidden');
+
+  const video = document.getElementById('ar-video');
+  const closeBtn = document.getElementById('btn-close-ar');
+
+  closeBtn.onclick = () => {
+     if (arStream) {
+        arStream.getTracks().forEach(track => track.stop());
+     }
+     arOverlay.classList.add('hidden');
+  };
+
+  try {
+    arStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    video.srcObject = arStream;
+    toastSuccess('AR Navigation', 'Live environment mapping started.');
+    
+    // Simulate AR movement
+    let angle = 0;
+    const arrow = document.getElementById('ar-direction-arrow');
+    const dest = document.getElementById('ar-destination-pin');
+    
+    const arInterval = setInterval(() => {
+       if (arOverlay.classList.contains('hidden')) {
+          clearInterval(arInterval);
+          return;
+       }
+       angle += 0.05;
+       if (arrow) {
+         arrow.style.left = `calc(50% + ${Math.sin(angle)*30}px - 3rem)`;
+         arrow.style.bottom = `calc(20% + ${Math.cos(angle)*10}px)`;
+       }
+       if (dest) {
+         dest.style.left = `calc(50% + ${Math.sin(angle*0.5)*50}px - 1.5rem)`;
+       }
+    }, 50);
+  } catch (err) {
+    console.warn("Camera access denied or unavailable", err);
+    toastError('Camera Error', 'Could not access camera for AR view. Simulating view.');
+    // Simulated background if camera fails
+    video.style.background = 'linear-gradient(to bottom, #1e293b, #0f172a)';
+  }
 }

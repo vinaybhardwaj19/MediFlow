@@ -1,20 +1,47 @@
 /**
- * store.js — Minimal reactive state store (observer pattern).
- * No framework dependency — modules subscribe to state slices.
+ * store.js — Minimal reactive state store (observer pattern) + Secure Storage.
  */
 
-let savedCart = [];
-try {
-  const c = localStorage.getItem('mf_cart');
-  if (c) savedCart = JSON.parse(c);
-} catch (e) {
-  console.warn('Failed to parse cart from storage', e);
+// ── Secure Storage Wrapper (XOR + Base64 Obfuscation) ────────────────────────
+const STORE_KEY = 'm3d1fl0w_s3cur3_k3y_99x';
+export function setSecureStorage(key, value) {
+  try {
+    const jsonStr = JSON.stringify(value);
+    let xor = '';
+    for (let i = 0; i < jsonStr.length; i++) {
+      xor += String.fromCharCode(jsonStr.charCodeAt(i) ^ STORE_KEY.charCodeAt(i % STORE_KEY.length));
+    }
+    localStorage.setItem(key, btoa(encodeURIComponent(xor)));
+  } catch (e) {
+    console.error('Failed to secure store', e);
+  }
 }
+
+export function getSecureStorage(key, defaultValue = null) {
+  try {
+    const b64 = localStorage.getItem(key);
+    if (!b64) return defaultValue;
+    const xor = decodeURIComponent(atob(b64));
+    let jsonStr = '';
+    for (let i = 0; i < xor.length; i++) {
+      jsonStr += String.fromCharCode(xor.charCodeAt(i) ^ STORE_KEY.charCodeAt(i % STORE_KEY.length));
+    }
+    return JSON.parse(jsonStr);
+  } catch (e) {
+    console.warn('Failed to parse secure storage, resetting key:', key);
+    localStorage.removeItem(key);
+    return defaultValue;
+  }
+}
+
+let savedCart = getSecureStorage('mf_cart', []);
+let savedAddresses = getSecureStorage('mf_addresses', []);
 
 const _state = {
   user       : null,    // { id, role, firstName, lastName, email }
   accessToken: null,
   cart       : savedCart, // [{ medicine, quantity }]
+  addresses  : savedAddresses, // [{ label, street, city, state, zipCode, coordinates }]
   triageResult: null,
 };
 
@@ -25,7 +52,10 @@ export function getState(key) { return _state[key]; }
 export function setState(key, value) {
   _state[key] = value;
   if (key === 'cart') {
-    localStorage.setItem('mf_cart', JSON.stringify(value));
+    setSecureStorage('mf_cart', value);
+  }
+  if (key === 'addresses') {
+    setSecureStorage('mf_addresses', value);
   }
   (_listeners[key] || []).forEach(fn => fn(value));
 }

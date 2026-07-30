@@ -14,20 +14,27 @@ function isEncrypted(val) {
   return parts.length === 3 && parts.every(part => /^[0-9a-fA-F]+$/.test(part));
 }
 
-function safeEncrypt(val) {
+function safeEncrypt(val, aad = '') {
   if (!val || typeof val !== 'string' || isEncrypted(val)) return val;
   try {
-    return encrypt(val);
+    return encrypt(val, aad);
   } catch (err) {
     return val;
   }
 }
 
-function safeDecrypt(val) {
+function safeDecrypt(val, aad = '') {
   if (!val || typeof val !== 'string' || !isEncrypted(val)) return val;
   try {
-    return decrypt(val);
+    return decrypt(val, aad);
   } catch (err) {
+    if (aad) {
+      try {
+        return decrypt(val, '');
+      } catch (e2) {
+        return val;
+      }
+    }
     return val;
   }
 }
@@ -71,13 +78,15 @@ doctorSchema.index({ isAcceptingPatients: 1 });
 
 // ─── PHI Encryption & Decryption Hooks ──────────────────────────────────────────
 doctorSchema.pre('save', function (next) {
-  if (this.licenseNumber) this.licenseNumber = safeEncrypt(this.licenseNumber);
+  const docId = this._id ? this._id.toString() : '';
+  if (this.licenseNumber) this.licenseNumber = safeEncrypt(this.licenseNumber, docId + ':licenseNumber');
   next();
 });
 
 function decryptDoctor(doc) {
   if (!doc) return;
-  if (doc.licenseNumber) doc.licenseNumber = safeDecrypt(doc.licenseNumber);
+  const docId = doc._id ? doc._id.toString() : '';
+  if (doc.licenseNumber) doc.licenseNumber = safeDecrypt(doc.licenseNumber, docId + ':licenseNumber');
 }
 
 doctorSchema.post('findOne', function (doc) {
