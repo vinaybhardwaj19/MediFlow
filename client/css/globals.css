@@ -1017,10 +1017,15 @@ body, #navbar, .card, .sidebar, .form-input, .modal-box, .btn,
 
 /* ── Body Map ────────────────────────────────────────────────────────────── */
 .bodymap-wrap {
-  display: grid; grid-template-columns: 280px 1fr; gap: 24px; margin-bottom: 24px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; position: relative; z-index: 1;
 }
 #bodymap-container {
-  position: relative; display: flex; flex-direction: column; align-items: center; gap: 12px;
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%;
+}
+.symptom-suggestions {
+  position: absolute; left: 0; right: 0; top: 100%; z-index: 1000 !important;
+  background: var(--bg-surface); border: 1px solid var(--border); border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6); backdrop-filter: blur(12px);
 }
 .bodymap-svg {
   width: 100%; max-width: 260px; height: auto;

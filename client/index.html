@@ -1181,30 +1181,7 @@
     <h2 class="section-title">🧠 AI Symptom Checker</h2>
     <p class="section-sub">Interact with our high-fidelity 3D Anatomy Engine to pinpoint symptoms.</p>
 
-    <!-- 3D Anatomy Control Cluster -->
-    <div id="anatomy-controls" class="card" style="margin-bottom: 20px; padding: 12px 20px; display: flex; gap: 15px; align-items: center; justify-content: center; flex-wrap: wrap; background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border); border-radius: 15px;">
-       <div style="display: flex; gap: 8px; align-items: center;">
-          <span style="font-size: 0.65rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Demographic:</span>
-          <select id="anatomy-demographic" class="form-input" style="width: auto; padding: 4px 10px; font-size: 0.75rem; height: 32px; border-radius: 8px;">
-             <option value="male">👨 Male</option>
-             <option value="female">👩 Female</option>
-             <option value="boy">👦 Boy</option>
-             <option value="girl">👧 Girl</option>
-          </select>
-       </div>
-       <div style="width: 1px; height: 20px; background: var(--border);"></div>
-       <div style="display: flex; gap: 8px; align-items: center;">
-          <span style="font-size: 0.65rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">System:</span>
-          <div style="display: flex; gap: 5px;" id="anatomy-layer-btns">
-             <button class="btn btn-sm btn-outline active" data-layer="skin" style="font-size: 0.65rem; padding: 4px 10px;">🧤 Skin</button>
-             <button class="btn btn-sm btn-outline" data-layer="muscle" style="font-size: 0.65rem; padding: 4px 10px;">🥩 Muscle</button>
-             <button class="btn btn-sm btn-outline" data-layer="skeletal" style="font-size: 0.65rem; padding: 4px 10px;">🦴 Bone</button>
-             <button class="btn btn-sm btn-outline" data-layer="nervous" style="font-size: 0.65rem; padding: 4px 10px;">🧠 Nerve</button>
-          </div>
-       </div>
-       <div style="width: 1px; height: 20px; background: var(--border);"></div>
-       <button class="btn btn-sm btn-primary" id="btn-reset-anatomy" title="Reset View" style="font-size: 0.65rem; padding: 4px 12px; height: 32px;">🔄 Reset 3D</button>
-    </div>
+
 
     <div class="bodymap-wrap" style="position: relative;">
       <!-- High-Fidelity 3D Body Map (populated by bodymap.js) -->
