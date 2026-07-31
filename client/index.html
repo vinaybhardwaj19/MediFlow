@@ -27,6 +27,7 @@
   <!-- Three.js for 3D Digital Twin -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 
   <!-- DOMPurify for XSS Protection -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
@@ -1178,11 +1179,41 @@
 <div id="page-triage" class="page hidden">
   <div class="container" style="max-width:960px;">
     <h2 class="section-title">🧠 AI Symptom Checker</h2>
-    <p class="section-sub">Click on the body or type symptoms — our AI will recommend the right specialist.</p>
+    <p class="section-sub">Interact with our high-fidelity 3D Anatomy Engine to pinpoint symptoms.</p>
 
-    <div class="bodymap-wrap">
-      <!-- Interactive Body Map (populated by bodymap.js) -->
-      <div id="bodymap-container" class="reveal"></div>
+    <!-- 3D Anatomy Control Cluster -->
+    <div id="anatomy-controls" class="card" style="margin-bottom: 20px; padding: 12px 20px; display: flex; gap: 15px; align-items: center; justify-content: center; flex-wrap: wrap; background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border); border-radius: 15px;">
+       <div style="display: flex; gap: 8px; align-items: center;">
+          <span style="font-size: 0.65rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Demographic:</span>
+          <select id="anatomy-demographic" class="form-input" style="width: auto; padding: 4px 10px; font-size: 0.75rem; height: 32px; border-radius: 8px;">
+             <option value="male">👨 Male</option>
+             <option value="female">👩 Female</option>
+             <option value="boy">👦 Boy</option>
+             <option value="girl">👧 Girl</option>
+          </select>
+       </div>
+       <div style="width: 1px; height: 20px; background: var(--border);"></div>
+       <div style="display: flex; gap: 8px; align-items: center;">
+          <span style="font-size: 0.65rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">System:</span>
+          <div style="display: flex; gap: 5px;" id="anatomy-layer-btns">
+             <button class="btn btn-sm btn-outline active" data-layer="skin" style="font-size: 0.65rem; padding: 4px 10px;">🧤 Skin</button>
+             <button class="btn btn-sm btn-outline" data-layer="muscle" style="font-size: 0.65rem; padding: 4px 10px;">🥩 Muscle</button>
+             <button class="btn btn-sm btn-outline" data-layer="skeletal" style="font-size: 0.65rem; padding: 4px 10px;">🦴 Bone</button>
+             <button class="btn btn-sm btn-outline" data-layer="nervous" style="font-size: 0.65rem; padding: 4px 10px;">🧠 Nerve</button>
+          </div>
+       </div>
+       <div style="width: 1px; height: 20px; background: var(--border);"></div>
+       <button class="btn btn-sm btn-primary" id="btn-reset-anatomy" title="Reset View" style="font-size: 0.65rem; padding: 4px 12px; height: 32px;">🔄 Reset 3D</button>
+    </div>
+
+    <div class="bodymap-wrap" style="position: relative;">
+      <!-- High-Fidelity 3D Body Map (populated by bodymap.js) -->
+      <div id="bodymap-container" class="reveal" style="height: 600px; background: #000; border-radius: 20px; overflow: hidden; border: 1px solid var(--border); position: relative;">
+         <div id="anatomy-loading" style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #000; z-index: 100;">
+            <div class="spinner spinner-lg" style="margin-bottom: 15px;"></div>
+            <div style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600; letter-spacing: 1px;">INITIALIZING REALISTIC ANATOMY ENGINE...</div>
+         </div>
+      </div>
 
       <!-- Symptom Input Card -->
       <div class="card">

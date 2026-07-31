@@ -372,52 +372,122 @@ function createVisualPart(parentGroup, geo, mat, x, y, z, region, extraData = {}
 
 function buildSkinSystem(prof) {
     const material = new THREE.MeshPhysicalMaterial({
-        color: 0x0ea5e9, metalness: 0.1, roughness: 0.1, transmission: 0.9,
-        transparent: true, opacity: 0.8, side: THREE.DoubleSide
+        color: 0x0ea5e9, metalness: 0.15, roughness: 0.2, transmission: 0.85,
+        transparent: true, opacity: 0.85, side: THREE.DoubleSide
     });
 
-    const headGeo = new THREE.SphereGeometry(1.2, 32, 32);
-    headGeo.scale(prof.headScale, prof.headScale, prof.headScale);
-    createVisualPart(skinGroup, headGeo, material.clone(), 0, 7.5, 0, 'head');
-    createVisualPart(skinGroup, new THREE.CylinderGeometry(0.5, 0.6, 1, 16), material.clone(), 0, 6.2, 0, 'chest'); // neck
-    createVisualPart(skinGroup, new THREE.BoxGeometry(3.2, 2.8, 1.6), material.clone(), 0, 4.5, 0, 'chest');
-    createVisualPart(skinGroup, new THREE.BoxGeometry(2.8, 2.2, 1.5), material.clone(), 0, 2.2, 0, 'abdomen');
-    createVisualPart(skinGroup, new THREE.CylinderGeometry(0.5, 0.35, 4.5, 16), material.clone(), -2.2, 3.5, 0, 'arms');
-    createVisualPart(skinGroup, new THREE.CylinderGeometry(0.5, 0.35, 4.5, 16), material.clone(), 2.2, 3.5, 0, 'arms');
-    createVisualPart(skinGroup, new THREE.CylinderGeometry(0.6, 0.4, 5, 16), material.clone(), -0.9, -1.5, 0, 'legs');
-    createVisualPart(skinGroup, new THREE.CylinderGeometry(0.6, 0.4, 5, 16), material.clone(), 0.9, -1.5, 0, 'legs');
+    // Cranium & Face
+    const headGeo = new THREE.SphereGeometry(1.15, 32, 32);
+    headGeo.scale(prof.headScale * 0.95, prof.headScale * 1.1, prof.headScale * 1.0); // Natural anatomical head shape
+    createVisualPart(skinGroup, headGeo, material.clone(), 0, 7.6, 0.1, 'head');
+
+    // Neck
+    createVisualPart(skinGroup, new THREE.CylinderGeometry(0.45, 0.58, 1.1, 24), material.clone(), 0, 6.3, 0, 'chest');
+
+    // Shoulders (L & R Anatomical Bulges)
+    createVisualPart(skinGroup, new THREE.SphereGeometry(0.65, 16, 16), material.clone(), -2.0, 5.3, 0, 'arms');
+    createVisualPart(skinGroup, new THREE.SphereGeometry(0.65, 16, 16), material.clone(), 2.0, 5.3, 0, 'arms');
+
+    // Chest / Upper Torso (Broad shoulders tapering down to ribs)
+    const chestGeo = new THREE.CylinderGeometry(1.9, 1.45, 2.7, 32);
+    chestGeo.scale(1.2, 1.0, 0.75); // Flattened depth, broad chest
+    createVisualPart(skinGroup, chestGeo, material.clone(), 0, 4.6, 0, 'chest');
+
+    // Abdomen & Waist (Tapered waist expanding slightly to hips)
+    const abGeo = new THREE.CylinderGeometry(1.4, 1.55, 2.2, 32);
+    abGeo.scale(1.1, 1.0, 0.72);
+    createVisualPart(skinGroup, abGeo, material.clone(), 0, 2.25, 0, 'abdomen');
+
+    // Pelvis & Hips
+    const pelvisGeo = new THREE.SphereGeometry(1.4, 24, 24);
+    pelvisGeo.scale(1.15, 0.65, 0.75);
+    createVisualPart(skinGroup, pelvisGeo, material.clone(), 0, 1.0, 0, 'abdomen');
+
+    // Upper Arms (Biceps/Triceps Taper)
+    createVisualPart(skinGroup, new THREE.CylinderGeometry(0.48, 0.4, 2.4, 20), material.clone(), -2.25, 4.1, 0, 'arms');
+    createVisualPart(skinGroup, new THREE.CylinderGeometry(0.48, 0.4, 2.4, 20), material.clone(), 2.25, 4.1, 0, 'arms');
+
+    // Elbow Joints
+    createVisualPart(skinGroup, new THREE.SphereGeometry(0.42, 16, 16), material.clone(), -2.25, 2.8, 0, 'arms');
+    createVisualPart(skinGroup, new THREE.SphereGeometry(0.42, 16, 16), material.clone(), 2.25, 2.8, 0, 'arms');
+
+    // Forearms & Wrists
+    createVisualPart(skinGroup, new THREE.CylinderGeometry(0.38, 0.28, 2.4, 20), material.clone(), -2.25, 1.5, 0, 'arms');
+    createVisualPart(skinGroup, new THREE.CylinderGeometry(0.38, 0.28, 2.4, 20), material.clone(), 2.25, 1.5, 0, 'arms');
+
+    // Hands
+    const handGeo = new THREE.BoxGeometry(0.35, 0.7, 0.6);
+    createVisualPart(skinGroup, handGeo, material.clone(), -2.25, 0.0, 0, 'arms');
+    createVisualPart(skinGroup, handGeo, material.clone(), 2.25, 0.0, 0, 'arms');
+
+    // Thighs (Upper Legs - Quadriceps/Hamstrings Taper)
+    createVisualPart(skinGroup, new THREE.CylinderGeometry(0.68, 0.52, 2.9, 24), material.clone(), -0.95, -0.6, 0, 'legs');
+    createVisualPart(skinGroup, new THREE.CylinderGeometry(0.68, 0.52, 2.9, 24), material.clone(), 0.95, -0.6, 0, 'legs');
+
+    // Knee Joints (Patella Bulges)
+    createVisualPart(skinGroup, new THREE.SphereGeometry(0.5, 16, 16), material.clone(), -0.95, -2.1, 0.05, 'legs');
+    createVisualPart(skinGroup, new THREE.SphereGeometry(0.5, 16, 16), material.clone(), 0.95, -2.1, 0.05, 'legs');
+
+    // Calves & Shins (Lower Legs)
+    createVisualPart(skinGroup, new THREE.CylinderGeometry(0.48, 0.32, 2.9, 24), material.clone(), -0.95, -3.6, 0, 'legs');
+    createVisualPart(skinGroup, new THREE.CylinderGeometry(0.48, 0.32, 2.9, 24), material.clone(), 0.95, -3.6, 0, 'legs');
+
+    // Feet
+    const footGeo = new THREE.BoxGeometry(0.55, 0.4, 1.1);
+    createVisualPart(skinGroup, footGeo, material.clone(), -0.95, -5.2, 0.25, 'legs');
+    createVisualPart(skinGroup, footGeo, material.clone(), 0.95, -5.2, 0.25, 'legs');
 }
 
 function buildSkeletalSystem(prof) {
-    const boneMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.8, metalness: 0.1, transparent: true });
+    const boneMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.5, metalness: 0.15, transparent: true });
     
-    // Skull
-    const skullGeo = new THREE.SphereGeometry(1.0, 16, 16);
-    skullGeo.scale(prof.headScale, prof.headScale, prof.headScale);
-    createVisualPart(skeletalGroup, skullGeo, boneMat.clone(), 0, 7.5, 0, 'head');
+    // Cranium
+    const skullGeo = new THREE.SphereGeometry(1.0, 20, 20);
+    skullGeo.scale(prof.headScale * 0.9, prof.headScale * 1.05, prof.headScale * 0.95);
+    createVisualPart(skeletalGroup, skullGeo, boneMat.clone(), 0, 7.6, 0.05, 'head');
 
-    // Spine & Ribs (Chest)
-    createVisualPart(skeletalGroup, new THREE.CylinderGeometry(0.3, 0.3, 3, 8), boneMat.clone(), 0, 4.5, 0, 'chest'); 
-    for(let i=0; i<5; i++) {
-        const rib = new THREE.TorusGeometry(1.1 + (Math.sin(i)*0.2), 0.1, 8, 24, Math.PI);
-        const ribMesh = createVisualPart(skeletalGroup, rib, boneMat.clone(), 0, 5.5 - (i*0.5), 0.3, 'chest', { isRib: true });
+    // Spinal Column (Cervical, Thoracic, Lumbar Vertebrae)
+    for (let y = 6.4; y >= 0.8; y -= 0.35) {
+        const vertGeo = new THREE.CylinderGeometry(0.22, 0.24, 0.25, 12);
+        createVisualPart(skeletalGroup, vertGeo, boneMat.clone(), 0, y, -0.2, 'chest');
+    }
+
+    // Clavicles (Collarbones L & R)
+    const clavL = new THREE.CylinderGeometry(0.08, 0.08, 1.8, 8);
+    clavL.rotateZ(Math.PI / 2.3);
+    createVisualPart(skeletalGroup, clavL, boneMat.clone(), -0.9, 5.6, 0.1, 'chest');
+
+    const clavR = new THREE.CylinderGeometry(0.08, 0.08, 1.8, 8);
+    clavR.rotateZ(-Math.PI / 2.3);
+    createVisualPart(skeletalGroup, clavR, boneMat.clone(), 0.9, 5.6, 0.1, 'chest');
+
+    // Ribcage (Anatomical Curved Rib Torus Rings)
+    for(let i=0; i<6; i++) {
+        const rib = new THREE.TorusGeometry(1.25 + (Math.sin(i*0.5)*0.25), 0.09, 8, 28, Math.PI * 1.1);
+        const ribMesh = createVisualPart(skeletalGroup, rib, boneMat.clone(), 0, 5.4 - (i*0.48), 0.15, 'chest', { isRib: true });
         ribMesh.rotation.x = Math.PI / 2;
     }
 
-    // Pelvis (Abdomen)
-    createVisualPart(skeletalGroup, new THREE.BoxGeometry(2.2, 1.2, 1), boneMat.clone(), 0, 2.0, 0, 'abdomen');
+    // Pelvic Girdle
+    const pelvisGeo = new THREE.TorusGeometry(1.1, 0.3, 12, 24, Math.PI * 1.2);
+    pelvisGeo.rotateX(Math.PI / 2.2);
+    createVisualPart(skeletalGroup, pelvisGeo, boneMat.clone(), 0, 1.1, 0, 'abdomen');
 
-    // Arms
-    createVisualPart(skeletalGroup, new THREE.CylinderGeometry(0.2, 0.15, 2, 8), boneMat.clone(), -2.2, 4.5, 0, 'arms'); // humerus
-    createVisualPart(skeletalGroup, new THREE.CylinderGeometry(0.15, 0.1, 2, 8), boneMat.clone(), -2.2, 2.3, 0, 'arms'); // radius/ulna
-    createVisualPart(skeletalGroup, new THREE.CylinderGeometry(0.2, 0.15, 2, 8), boneMat.clone(), 2.2, 4.5, 0, 'arms'); 
-    createVisualPart(skeletalGroup, new THREE.CylinderGeometry(0.15, 0.1, 2, 8), boneMat.clone(), 2.2, 2.3, 0, 'arms'); 
+    // Arm Bones (Humerus, Radius, Ulna, Joints)
+    createVisualPart(skeletalGroup, new THREE.SphereGeometry(0.35, 12, 12), boneMat.clone(), -2.0, 5.2, 0, 'arms'); // shoulder joint
+    createVisualPart(skeletalGroup, new THREE.SphereGeometry(0.35, 12, 12), boneMat.clone(), 2.0, 5.2, 0, 'arms');
+    createVisualPart(skeletalGroup, new THREE.CylinderGeometry(0.18, 0.14, 2.2, 10), boneMat.clone(), -2.25, 4.0, 0, 'arms'); // humerus
+    createVisualPart(skeletalGroup, new THREE.CylinderGeometry(0.18, 0.14, 2.2, 10), boneMat.clone(), 2.25, 4.0, 0, 'arms');
+    createVisualPart(skeletalGroup, new THREE.CylinderGeometry(0.14, 0.10, 2.2, 10), boneMat.clone(), -2.25, 1.5, 0, 'arms'); // forearm
+    createVisualPart(skeletalGroup, new THREE.CylinderGeometry(0.14, 0.10, 2.2, 10), boneMat.clone(), 2.25, 1.5, 0, 'arms');
 
-    // Legs
-    createVisualPart(skeletalGroup, new THREE.CylinderGeometry(0.25, 0.2, 2.5, 8), boneMat.clone(), -0.9, 0, 0, 'legs'); // femur
-    createVisualPart(skeletalGroup, new THREE.CylinderGeometry(0.2, 0.15, 2.5, 8), boneMat.clone(), -0.9, -2.7, 0, 'legs'); // tibia
-    createVisualPart(skeletalGroup, new THREE.CylinderGeometry(0.25, 0.2, 2.5, 8), boneMat.clone(), 0.9, 0, 0, 'legs'); 
-    createVisualPart(skeletalGroup, new THREE.CylinderGeometry(0.2, 0.15, 2.5, 8), boneMat.clone(), 0.9, -2.7, 0, 'legs'); 
+    // Leg Bones (Femur, Patella, Tibia, Fibula)
+    createVisualPart(skeletalGroup, new THREE.CylinderGeometry(0.24, 0.18, 2.7, 12), boneMat.clone(), -0.95, -0.6, 0, 'legs'); // femur
+    createVisualPart(skeletalGroup, new THREE.CylinderGeometry(0.24, 0.18, 2.7, 12), boneMat.clone(), 0.95, -0.6, 0, 'legs');
+    createVisualPart(skeletalGroup, new THREE.SphereGeometry(0.22, 12, 12), boneMat.clone(), -0.95, -2.0, 0.1, 'legs'); // patella
+    createVisualPart(skeletalGroup, new THREE.SphereGeometry(0.22, 12, 12), boneMat.clone(), 0.95, -2.0, 0.1, 'legs');
+    createVisualPart(skeletalGroup, new THREE.CylinderGeometry(0.18, 0.13, 2.7, 12), boneMat.clone(), -0.95, -3.5, 0, 'legs'); // tibia
+    createVisualPart(skeletalGroup, new THREE.CylinderGeometry(0.18, 0.13, 2.7, 12), boneMat.clone(), 0.95, -3.5, 0, 'legs');
 }
 
 function buildNervousSystem(prof) {

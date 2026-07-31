@@ -373,3 +373,42 @@ body.force-desktop .stat-grid,
 body.force-desktop .vitals-grid {
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
 }
+
+/* ── 3D Anatomy Pro Engine Styles ────────────────────────────────────────── */
+#bodymap-container canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+#anatomy-controls .btn-outline.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.anatomy-tooltip-3d {
+  position: absolute;
+  pointer-events: none;
+  background: rgba(15, 23, 42, 0.95);
+  color: white;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border: 1px solid var(--accent);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  z-index: 200;
+  transform: translate(-50%, -100%);
+  margin-top: -15px;
+  backdrop-filter: blur(8px);
+}
+
+#bodymap-symptom-panel {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-lg);
+}
+
+.inclusive-mode-active #anatomy-controls {
+  display: none !important;
+}
