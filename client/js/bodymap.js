@@ -550,52 +550,42 @@ function buildUIOverlays(container) {
        controlsUI = document.createElement('div');
        controlsUI.id = 'bodymap-controls';
        controlsUI.className = 'bodymap-controls';
-       controlsUI.style.cssText = 'position:absolute; top:20px; left:20px; display:flex; flex-direction:column; gap:20px; z-index:10; background:rgba(15, 23, 42, 0.75); padding:20px; border-radius:16px; border:1px solid rgba(255,255,255,0.1); backdrop-filter:blur(10px); width:280px; box-shadow: 0 10px 40px rgba(0,0,0,0.5);';
+       controlsUI.style.cssText = 'position:absolute; top:12px; left:16px; right:16px; display:flex; align-items:center; justify-content:space-between; gap:10px; z-index:10; pointer-events:none;';
        
-       const profileHTML = `
-           <div>
-               <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:10px; text-transform:uppercase; letter-spacing:1px; font-weight:600;">Patient Profile</div>
-               <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-                   ${Object.keys(PROFILES).map(p => `<button class="btn btn-sm btn-outline profile-btn ${p===currentProfile?'active':''}" data-val="${p}" style="text-transform:capitalize;">${p}</button>`).join('')}
-               </div>
+       const profilePills = `
+           <div style="pointer-events:auto; display:flex; align-items:center; gap:6px; background:rgba(15, 23, 42, 0.85); padding:5px 10px; border-radius:30px; border:1px solid rgba(255,255,255,0.12); backdrop-filter:blur(10px); box-shadow:0 4px 20px rgba(0,0,0,0.4);">
+               <span style="font-size:0.68rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.8px; font-weight:700; margin-right:4px;">Profile:</span>
+               ${Object.keys(PROFILES).map(p => `
+                   <button class="btn btn-sm btn-outline profile-btn ${p===currentProfile?'active':''}" data-val="${p}" style="text-transform:capitalize; font-size:0.75rem; padding:3px 10px; border-radius:20px;">
+                       ${p === 'man' ? '👤 Man' : p === 'woman' ? '👩 Woman' : p === 'boy' ? '👦 Boy' : '👧 Girl'}
+                   </button>
+               `).join('')}
            </div>
        `;
 
-       const sliderHTML = `
-           <div style="margin-top:10px;">
-               <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:10px; text-transform:uppercase; letter-spacing:1px; font-weight:600; display:flex; justify-content:space-between;">
-                   <span>Skin</span><span>Skeleton</span><span>Nerves</span>
-               </div>
-               <input type="range" id="xray-depth-slider" min="0" max="100" value="0" class="xray-slider" style="width:100%;">
-           </div>
-       `;
-       
        const voiceActionHTML = `
-           <div style="margin-top:10px; padding-top:15px; border-top:1px solid rgba(255,255,255,0.1);">
-               <button id="voice-nav-mock-btn" class="btn btn-outline" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px;">
-                   <span style="font-size:1.2rem;">🎙️</span> Speak Issue
+           <div style="pointer-events:auto;">
+               <button id="voice-nav-mock-btn" class="btn btn-sm btn-outline" style="display:flex; align-items:center; gap:6px; background:rgba(15, 23, 42, 0.85); padding:6px 14px; border-radius:30px; border:1px solid rgba(255,255,255,0.12); backdrop-filter:blur(10px); box-shadow:0 4px 20px rgba(0,0,0,0.4);">
+                   <span style="font-size:1.0rem;">🎙️</span> <span>Speak Issue</span>
                </button>
            </div>
        `;
 
-       controlsUI.innerHTML = profileHTML + sliderHTML + voiceActionHTML;
+       controlsUI.innerHTML = profilePills + voiceActionHTML;
        container.appendChild(controlsUI);
 
        controlsUI.querySelectorAll('.profile-btn').forEach(btn => {
            btn.addEventListener('click', (e) => {
+               const target = e.target.closest('.profile-btn');
+               if (!target) return;
                controlsUI.querySelectorAll('.profile-btn').forEach(b => b.classList.remove('active'));
-               e.target.classList.add('active');
-               currentProfile = e.target.dataset.val;
+               target.classList.add('active');
+               currentProfile = target.dataset.val;
                buildAllModels();
            });
        });
 
-       const slider = document.getElementById('xray-depth-slider');
-       slider.addEventListener('input', (e) => {
-           xrayDepth = parseInt(e.target.value) / 100.0;
-       });
-
-       document.getElementById('voice-nav-mock-btn').addEventListener('click', () => {
+       document.getElementById('voice-nav-mock-btn')?.addEventListener('click', () => {
            const regions = Object.keys(BODY_REGIONS);
            const randomRegion = regions[Math.floor(Math.random() * regions.length)];
            
@@ -612,9 +602,31 @@ function buildUIOverlays(container) {
        });
    }
 
+   // Dedicated Bottom Floating X-Ray Strip (Non-intersecting)
+   let xrayStrip = document.getElementById('bodymap-xray-strip');
+   if (!xrayStrip) {
+       xrayStrip = document.createElement('div');
+       xrayStrip.id = 'bodymap-xray-strip';
+       xrayStrip.style.cssText = 'position:absolute; bottom:14px; left:50%; transform:translateX(-50%); width:90%; max-width:460px; z-index:10; pointer-events:auto; background:rgba(15, 23, 42, 0.85); backdrop-filter:blur(12px); padding:8px 18px; border-radius:30px; border:1px solid rgba(255,255,255,0.15); box-shadow:0 8px 30px rgba(0,0,0,0.5); display:flex; flex-direction:column; gap:4px;';
+       xrayStrip.innerHTML = `
+           <div style="font-size:0.68rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.8px; font-weight:700; display:flex; justify-content:space-between; align-items:center;">
+               <span>🧤 Surface Skin</span>
+               <span style="color:var(--primary); font-weight:800;">⚡ X-RAY DEPTH</span>
+               <span>🧠 Nervous System</span>
+           </div>
+           <input type="range" id="xray-depth-slider" min="0" max="100" value="0" class="xray-slider" style="width:100%; cursor:pointer;">
+       `;
+       container.appendChild(xrayStrip);
+
+       const slider = document.getElementById('xray-depth-slider');
+       slider?.addEventListener('input', (e) => {
+           xrayDepth = parseInt(e.target.value) / 100.0;
+       });
+   }
+
    const extras = document.createElement('div');
    extras.className = 'bodymap-extras';
-   extras.style.cssText = 'position:absolute; bottom:20px; left:20px; display:flex; gap:10px; z-index:10;';
+   extras.style.cssText = 'position:absolute; bottom:60px; left:16px; display:flex; gap:8px; z-index:10;';
    
    ['skin', 'mind'].forEach(key => {
      const r = BODY_REGIONS[key];
