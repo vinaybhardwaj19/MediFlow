@@ -73,7 +73,17 @@ const PROFILES = {
   girl: { scaleY: 0.65, scaleX: 0.65, yOffset: -1.7, headScale: 1.25 }
 };
 
-let scene, camera, renderer, raycaster, mouse, controls;
+const SKIN_TONES = {
+  natural: { name: 'Warm Natural', color: 0xe0a98b, roughness: 0.55, metalness: 0.05, emissive: 0x3d1710, emissiveIntensity: 0.15 },
+  fair: { name: 'Fair Rosy', color: 0xf3d2c1, roughness: 0.5, metalness: 0.05, emissive: 0x4a1c1c, emissiveIntensity: 0.10 },
+  tan: { name: 'Golden Tan', color: 0xc68642, roughness: 0.55, metalness: 0.05, emissive: 0x3b1c08, emissiveIntensity: 0.15 },
+  deep: { name: 'Rich Mahogany', color: 0x6f3d1b, roughness: 0.6, metalness: 0.05, emissive: 0x241005, emissiveIntensity: 0.15 },
+  cyber: { name: 'Sci-Fi Hologram', color: 0x0ea5e9, roughness: 0.25, metalness: 0.35, emissive: 0x000000, emissiveIntensity: 0.0 }
+};
+
+let currentProfile = 'man';
+let currentSkinTone = 'natural';
+let xrayDepth = 0.0; // 0.0 = Skin, 0.5 = Skeletal, 1.0 = Nervous;
 let clock;
 let hitboxMeshes = [];
 let rootVisualGroup, skinGroup, skeletalGroup, nervousGroup;
@@ -81,9 +91,6 @@ let hitboxGroup;
 let selectedRegion = null;
 let activeSymptom = null; // For heatmaps
 let animationFrameId;
-
-let currentProfile = 'man';
-let xrayDepth = 0.0; // 0.0 = Skin, 0.5 = Skeletal, 1.0 = Nervous
 
 // Camera Animation State
 let isAnimatingCamera = false;
@@ -380,9 +387,11 @@ function createVisualPart(parentGroup, geo, mat, x, y, z, region, extraData = {}
 }
 
 function buildHighPolySkinSystem(prof) {
+    const tone = SKIN_TONES[currentSkinTone] || SKIN_TONES.natural;
     const material = new THREE.MeshStandardMaterial({
-        color: 0x0ea5e9, metalness: 0.35, roughness: 0.25,
-        transparent: true, opacity: 0.85, side: THREE.DoubleSide
+        color: tone.color, roughness: tone.roughness, metalness: tone.metalness,
+        emissive: tone.emissive, emissiveIntensity: tone.emissiveIntensity,
+        transparent: true, opacity: 0.88, side: THREE.DoubleSide
     });
 
     // 1. High-Poly Head & Face Contour
@@ -553,11 +562,17 @@ function buildUIOverlays(container) {
        controlsUI.style.cssText = 'position:absolute; top:12px; left:16px; right:16px; display:flex; align-items:center; justify-content:space-between; gap:10px; z-index:10; pointer-events:none;';
        
        const profilePills = `
-           <div style="pointer-events:auto; display:flex; align-items:center; gap:6px; background:rgba(15, 23, 42, 0.85); padding:5px 10px; border-radius:30px; border:1px solid rgba(255,255,255,0.12); backdrop-filter:blur(10px); box-shadow:0 4px 20px rgba(0,0,0,0.4);">
-               <span style="font-size:0.68rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.8px; font-weight:700; margin-right:4px;">Profile:</span>
+           <div style="pointer-events:auto; display:flex; align-items:center; gap:6px; background:rgba(15, 23, 42, 0.85); padding:5px 12px; border-radius:30px; border:1px solid rgba(255,255,255,0.12); backdrop-filter:blur(10px); box-shadow:0 4px 20px rgba(0,0,0,0.4);">
+               <span style="font-size:0.68rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.8px; font-weight:700; margin-right:2px;">Profile:</span>
                ${Object.keys(PROFILES).map(p => `
                    <button class="btn btn-sm btn-outline profile-btn ${p===currentProfile?'active':''}" data-val="${p}" style="text-transform:capitalize; font-size:0.75rem; padding:3px 10px; border-radius:20px;">
                        ${p === 'man' ? '👤 Man' : p === 'woman' ? '👩 Woman' : p === 'boy' ? '👦 Boy' : '👧 Girl'}
+                   </button>
+               `).join('')}
+               <div style="width:1px; height:16px; background:rgba(255,255,255,0.15); margin:0 4px;"></div>
+               <span style="font-size:0.68rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.8px; font-weight:700; margin-right:2px;">Skin:</span>
+               ${Object.keys(SKIN_TONES).map(t => `
+                   <button class="btn btn-sm skin-tone-btn ${t===currentSkinTone?'active':''}" data-tone="${t}" title="${SKIN_TONES[t].name}" style="width:20px; height:20px; border-radius:50%; border:2px solid ${t===currentSkinTone?'#38bdf8':'rgba(255,255,255,0.2)'}; background:#${SKIN_TONES[t].color.toString(16).padStart(6, '0')}; cursor:pointer; padding:0; transition:all 0.2s;">
                    </button>
                `).join('')}
            </div>
@@ -581,6 +596,21 @@ function buildUIOverlays(container) {
                controlsUI.querySelectorAll('.profile-btn').forEach(b => b.classList.remove('active'));
                target.classList.add('active');
                currentProfile = target.dataset.val;
+               buildAllModels();
+           });
+       });
+
+       controlsUI.querySelectorAll('.skin-tone-btn').forEach(btn => {
+           btn.addEventListener('click', (e) => {
+               const target = e.target.closest('.skin-tone-btn');
+               if (!target) return;
+               controlsUI.querySelectorAll('.skin-tone-btn').forEach(b => {
+                   b.style.borderColor = 'rgba(255,255,255,0.2)';
+                   b.classList.remove('active');
+               });
+               target.classList.add('active');
+               target.style.borderColor = '#38bdf8';
+               currentSkinTone = target.dataset.tone;
                buildAllModels();
            });
        });
