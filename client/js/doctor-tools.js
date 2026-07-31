@@ -252,7 +252,7 @@ function wireRxPad() {
       recognition.onerror = (event) => {
         console.error('Speech recognition error', event.error);
         if (event.error !== 'no-speech') {
-          toastError('Scribe Error', \`Error: \${event.error}\`);
+          toastError('Scribe Error', 'Error: ' + event.error);
           scribeBtn.click(); // Reset state
         }
       };
@@ -282,56 +282,31 @@ function wireRxPad() {
         // 1. Render extracted symptoms/findings
         const symptoms = data.entities.filter(e => e.category === 'symptom');
         if (symptoms.length) {
-          html += `
-            <div>
-              <div style="font-size:.72rem;color:var(--text-secondary);font-weight:700;margin-bottom:4px;">Symptoms & Findings:</div>
-              <div style="display:flex;flex-wrap:wrap;gap:6px;">
-                ${symptoms.map(s => `
-                  <span class="badge" style="font-size:.72rem;background:${s.negated ? 'rgba(255,255,255,0.05)' : 'var(--primary-glow)'};color:${s.negated ? 'var(--text-muted)' : 'var(--text-primary)'};text-decoration:${s.negated ? 'line-through' : 'none'};" title="${s.label} (${s.code})">
-                    ${s.text} ${s.negated ? '(negated)' : ''}
-                  </span>
-                `).join('')}
-              </div>
-            </div>`;
+          const symptomChips = symptoms.map(s => {
+            const bg = s.negated ? 'rgba(255,255,255,0.05)' : 'var(--primary-glow)';
+            const color = s.negated ? 'var(--text-muted)' : 'var(--text-primary)';
+            const decor = s.negated ? 'line-through' : 'none';
+            const suffix = s.negated ? '(negated)' : '';
+            return '<span class="badge" style="font-size:.72rem;background:' + bg + ';color:' + color + ';text-decoration:' + decor + ';" title="' + (s.label || '') + '">' + s.text + ' ' + suffix + '</span>';
+          }).join('');
+          html += '<div><div style="font-size:.72rem;color:var(--text-secondary);font-weight:700;margin-bottom:4px;">Symptoms &amp; Findings:</div><div style="display:flex;flex-wrap:wrap;gap:6px;">' + symptomChips + '</div></div>';
         }
         
         // 2. Render extracted conditions (ICD-10 mapping)
         const conditions = data.entities.filter(e => e.category === 'condition');
         if (conditions.length) {
-          html += `
-            <div style="margin-top:6px;">
-              <div style="font-size:.72rem;color:var(--text-secondary);font-weight:700;margin-bottom:4px;">Suspected Diagnoses:</div>
-              <div style="display:flex;flex-direction:column;gap:4px;">
-                ${conditions.map(c => `
-                  <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg-card);padding:6px 10px;border-radius:4px;border:1px solid var(--border);">
-                    <span style="font-size:.76rem;" title="${c.label}"><strong>${c.code}</strong> — ${c.text}</span>
-                    <button class="btn btn-outline btn-sm" style="font-size:.65rem;padding:2px 6px;" onclick="document.getElementById('icd-panel').classList.remove('hidden');document.getElementById('icd-selected').textContent = '✅ Selected: ${c.code} — ${c.label}';document.getElementById('icd-panel').dataset.selectedCode = '${c.code}';document.getElementById('icd-panel').dataset.selectedLabel = '${c.label}';">
-                      Apply ICD
-                    </button>
-                  </div>
-                `).join('')}
-              </div>
-            </div>`;
+          const condRows = conditions.map(c => {
+            return '<div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg-card);padding:6px 10px;border-radius:4px;border:1px solid var(--border);"><span style="font-size:.76rem;" title="' + (c.label || '') + '"><strong>' + c.code + '</strong> — ' + c.text + '</span><button class="btn btn-outline btn-sm btn-apply-icd" style="font-size:.65rem;padding:2px 6px;" data-code="' + c.code + '" data-label="' + (c.label || '') + '">Apply ICD</button></div>';
+          }).join('');
+          html += '<div style="margin-top:6px;"><div style="font-size:.72rem;color:var(--text-secondary);font-weight:700;margin-bottom:4px;">Suspected Diagnoses:</div><div style="display:flex;flex-direction:column;gap:4px;">' + condRows + '</div></div>';
         }
 
         // 3. Render extracted prescriptions
         if (data.prescriptions && data.prescriptions.length) {
-          html += `
-            <div style="margin-top:6px;">
-              <div style="font-size:.72rem;color:var(--text-secondary);font-weight:700;margin-bottom:4px;">Suggested Rx Auto-fill:</div>
-              <div style="display:flex;flex-direction:column;gap:4px;">
-                ${data.prescriptions.map((p, idx) => `
-                  <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(16,185,129,.05);padding:6px 10px;border-radius:4px;border:1px solid rgba(16,185,129,.2);">
-                    <div style="font-size:.76rem;">
-                      <strong>${p.name}</strong> <small style="color:var(--text-secondary);">${p.dose} &middot; ${p.frequency} &middot; ${p.duration}</small>
-                    </div>
-                    <button class="btn btn-primary btn-sm btn-auto-add" style="font-size:.65rem;padding:2px 6px;background:var(--success);border-color:var(--success);" data-idx="${idx}">
-                      + Add Rx
-                    </button>
-                  </div>
-                `).join('')}
-              </div>
-            </div>`;
+          const rxRows = data.prescriptions.map((p, idx) => {
+            return '<div style="display:flex;align-items:center;justify-content:space-between;background:rgba(16,185,129,.05);padding:6px 10px;border-radius:4px;border:1px solid rgba(16,185,129,.2);"><div style="font-size:.76rem;"><strong>' + p.name + '</strong> <small style="color:var(--text-secondary);">' + p.dose + ' &middot; ' + p.frequency + ' &middot; ' + p.duration + '</small></div><button class="btn btn-primary btn-sm btn-auto-add" style="font-size:.65rem;padding:2px 6px;background:var(--success);border-color:var(--success);" data-idx="' + idx + '">+ Add Rx</button></div>';
+          }).join('');
+          html += '<div style="margin-top:6px;"><div style="font-size:.72rem;color:var(--text-secondary);font-weight:700;margin-bottom:4px;">Suggested Rx Auto-fill:</div><div style="display:flex;flex-direction:column;gap:4px;">' + rxRows + '</div></div>';
         }
 
         if (!html) {
@@ -340,6 +315,22 @@ function wireRxPad() {
 
         if (listsContainer) {
           listsContainer.innerHTML = html;
+
+          // Attach listeners to Apply ICD buttons
+          listsContainer.querySelectorAll('.btn-apply-icd').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const code = btn.dataset.code;
+              const label = btn.dataset.label;
+              const icdPanel = document.getElementById('icd-panel');
+              const icdSelected = document.getElementById('icd-selected');
+              if (icdPanel && icdSelected) {
+                icdPanel.classList.remove('hidden');
+                icdSelected.textContent = `✅ Selected: ${code} — ${label}`;
+                icdPanel.dataset.selectedCode = code;
+                icdPanel.dataset.selectedLabel = label;
+              }
+            });
+          });
           
           // Attach listeners to + Add Rx buttons
           listsContainer.querySelectorAll('.btn-auto-add').forEach(btn => {
@@ -372,16 +363,12 @@ function populateICD(query) {
   const filtered = query
     ? ICD10_CODES.filter(c => c.label.toLowerCase().includes(query.toLowerCase()) || c.code.includes(query))
     : ICD10_CODES.slice(0, 8);
-  results.innerHTML = filtered.map(c => `
-    <div class="icd-item" data-code="${c.code}" style="
-      padding:8px 12px;border-radius:var(--radius-sm);cursor:pointer;
-      background:var(--glass-1);border:1px solid var(--border);
-      display:flex;gap:10px;align-items:center;transition:all .15s;
-    ">
-      <span style="font-family:monospace;font-size:.8rem;color:var(--primary);font-weight:700;min-width:60px;">${c.code}</span>
-      <span style="font-size:.85rem;">${c.label}</span>
-    </div>
-  `).join('');
+  results.innerHTML = filtered.map(c => 
+    '<div class="icd-item" data-code="' + c.code + '" style="padding:8px 12px;border-radius:var(--radius-sm);cursor:pointer;background:var(--glass-1);border:1px solid var(--border);display:flex;gap:10px;align-items:center;transition:all .15s;">' +
+      '<span style="font-family:monospace;font-size:.8rem;color:var(--primary);font-weight:700;min-width:60px;">' + c.code + '</span>' +
+      '<span style="font-size:.85rem;">' + c.label + '</span>' +
+    '</div>'
+  ).join('');
   results.querySelectorAll('.icd-item').forEach(item => {
     item.addEventListener('click', () => {
       const code = item.dataset.code;
@@ -410,28 +397,27 @@ async function checkInteractionsAndRender() {
       const data = res.data;
       alertEl?.classList.remove('hidden');
       if (listEl) {
-        listEl.innerHTML = `
-          <div style="font-size:.8rem;color:var(--text-secondary);margin-bottom:10px;">
-             GNN Link Prediction Algorithm: <strong>${data.algorithm}</strong>
-          </div>
-          ${data.interactions.map(i => `
-            <div style="margin-bottom:10px;font-size:.85rem;border-bottom:1px solid rgba(255,255,255,.05);padding-bottom:8px;">
-              <div style="display:flex;justify-content:space-between;align-items:center;">
-                <strong>${i.drug_a.toUpperCase()} + ${i.drug_b.toUpperCase()}</strong>
-                <span style="color:${i.color};font-size:.72rem;font-weight:700;padding:2px 6px;background:${i.color}18;border:1px solid ${i.color}40;border-radius:4px;">
-                  ${i.severity.toUpperCase()}
-                </span>
-              </div>
-              <div style="color:var(--text-secondary);font-size:.8rem;margin-top:4px;">${i.description}</div>
-              <div style="color:var(--text-muted);font-size:.72rem;margin-top:2px;">
-                Link prediction score: <code>${(i.gnn_score).toFixed(4)}</code> (Grover & Leskovec, 2016)
-              </div>
-            </div>
-          `).join('')}
-          <div style="font-size:.82rem;font-weight:700;color:${data.max_severity_color};margin-top:8px;padding:8px 10px;background:${data.max_severity_color}10;border-radius:6px;border-left:3px solid ${data.max_severity_color};">
-            ${data.recommendation}
-          </div>
-        `;
+        const rows = data.interactions.map(i => 
+          '<div style="margin-bottom:10px;font-size:.85rem;border-bottom:1px solid rgba(255,255,255,.05);padding-bottom:8px;">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+              '<strong>' + i.drug_a.toUpperCase() + ' + ' + i.drug_b.toUpperCase() + '</strong>' +
+              '<span style="color:' + i.color + ';font-size:.72rem;font-weight:700;padding:2px 6px;background:' + i.color + '18;border:1px solid ' + i.color + '40;border-radius:4px;">' +
+                i.severity.toUpperCase() +
+              '</span>' +
+            '</div>' +
+            '<div style="color:var(--text-secondary);font-size:.8rem;margin-top:4px;">' + i.description + '</div>' +
+            '<div style="color:var(--text-muted);font-size:.72rem;margin-top:2px;">' +
+              'Link prediction score: <code>' + (i.gnn_score ? i.gnn_score.toFixed(4) : '') + '</code> (Grover &amp; Leskovec, 2016)' +
+            '</div>' +
+          '</div>'
+        ).join('');
+
+        listEl.innerHTML = 
+          '<div style="font-size:.8rem;color:var(--text-secondary);margin-bottom:10px;">GNN Link Prediction Algorithm: <strong>' + data.algorithm + '</strong></div>' +
+          rows +
+          '<div style="font-size:.82rem;font-weight:700;color:' + data.max_severity_color + ';margin-top:8px;padding:8px 10px;background:' + data.max_severity_color + '10;border-radius:6px;border-left:3px solid ' + data.max_severity_color + ';">' +
+            data.recommendation +
+          '</div>';
       }
       if (data.max_severity === 'contraindicated' || data.max_severity === 'severe') {
         toastWarning('⚠️ DDI Alert', `High-risk GNN drug interaction detected!`);
@@ -445,13 +431,15 @@ async function checkInteractionsAndRender() {
     const localInteractions = checkDrugInteractions(names);
     if (localInteractions.length > 0) {
       alertEl?.classList.remove('hidden');
-      if (listEl) listEl.innerHTML = localInteractions.map(i => `
-        <div style="margin-bottom:6px;font-size:.85rem;">
-          <strong>${i.drugs.join(' + ')}</strong>
-          <span style="color:#ef4444;font-size:.75rem;margin-left:6px;padding:2px 6px;background:rgba(239,68,68,.15);border-radius:4px;">LOCAL WARNING</span>
-          <div style="color:var(--text-secondary);font-size:.8rem;">${i.effect}</div>
-        </div>
-      `).join('');
+      if (listEl) {
+        listEl.innerHTML = localInteractions.map(i => 
+          '<div style="margin-bottom:6px;font-size:.85rem;">' +
+            '<strong>' + i.drugs.join(' + ') + '</strong>' +
+            '<span style="color:#ef4444;font-size:.75rem;margin-left:6px;padding:2px 6px;background:rgba(239,68,68,.15);border-radius:4px;">LOCAL WARNING</span>' +
+            '<div style="color:var(--text-secondary);font-size:.8rem;">' + i.effect + '</div>' +
+          '</div>'
+        ).join('');
+      }
     } else {
       alertEl?.classList.add('hidden');
     }
@@ -466,19 +454,15 @@ function renderRxList() {
     el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:.85rem;">No medicines added yet</div>';
     return;
   }
-  el.innerHTML = _rxDrugs.map((d, i) => `
-    <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;margin-bottom:8px;
-      background:var(--glass-2);border:1px solid var(--border);border-radius:var(--radius-sm);border-left:4px solid var(--primary);">
-      <div style="flex:1;">
-        <div style="font-weight:700;">${d.name}</div>
-        <div style="font-size:.78rem;color:var(--text-secondary);">${d.dose} · ${d.frequency} · ${d.duration}${d.note?` — <em>${d.note}</em>`:''}</div>
-      </div>
-      <button onclick="this.closest('[data-rx-idx]')" data-rx-idx="${i}" style="
-        background:rgba(239,68,68,.15);border:none;color:#ef4444;width:28px;height:28px;
-        border-radius:50%;cursor:pointer;font-size:1rem;line-height:1;
-      " class="rm-drug-btn">✕</button>
-    </div>
-  `).join('');
+  el.innerHTML = _rxDrugs.map((d, i) => 
+    '<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;margin-bottom:8px;background:var(--glass-2);border:1px solid var(--border);border-radius:var(--radius-sm);border-left:4px solid var(--primary);">' +
+      '<div style="flex:1;">' +
+        '<div style="font-weight:700;">' + d.name + '</div>' +
+        '<div style="font-size:.78rem;color:var(--text-secondary);">' + d.dose + ' &middot; ' + d.frequency + ' &middot; ' + d.duration + (d.note ? ' — <em>' + d.note + '</em>' : '') + '</div>' +
+      '</div>' +
+      '<button data-rx-idx="' + i + '" style="background:rgba(239,68,68,.15);border:none;color:#ef4444;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:1rem;line-height:1;" class="rm-drug-btn">✕</button>' +
+    '</div>'
+  ).join('');
   el.querySelectorAll('.rm-drug-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const idx = parseInt(btn.dataset.rxIdx);
@@ -544,48 +528,49 @@ export function initDoctorRating() {
 
   const avg = (ratings.reduce((s, r) => s + r.stars, 0) / ratings.length).toFixed(1);
 
-  container.innerHTML = `
-    <div style="display:flex;align-items:center;gap:20px;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--border);">
-      <div style="text-align:center;">
-        <div style="font-size:3rem;font-weight:900;color:var(--primary);">${avg}</div>
-        <div style="color:#f59e0b;font-size:1.2rem;">${'⭐'.repeat(Math.round(avg))}</div>
-        <div style="font-size:.75rem;color:var(--text-secondary);">${ratings.length} reviews</div>
-      </div>
-      <div style="flex:1;">
-        ${[5,4,3,2,1].map(n => {
-          const count = ratings.filter(r => r.stars === n).length;
-          const pct = Math.round(count / ratings.length * 100);
-          return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;font-size:.8rem;">
-            <span style="min-width:24px;">${n}⭐</span>
-            <div style="flex:1;background:var(--glass-3);border-radius:4px;height:8px;overflow:hidden;">
-              <div style="width:${pct}%;height:100%;background:var(--primary);border-radius:4px;transition:width 1s;"></div>
-            </div>
-            <span style="min-width:24px;color:var(--text-secondary);">${count}</span>
-          </div>`;
-        }).join('')}
-      </div>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:12px;">
-      ${ratings.map(r => `
-        <div style="padding:14px;background:var(--glass-2);border-radius:var(--radius-sm);border:1px solid var(--border);">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
-            <div style="font-weight:600;font-size:.9rem;">👤 ${r.patient}</div>
-            <div style="font-size:.75rem;color:var(--text-secondary);">${r.date}</div>
-          </div>
-          <div style="color:#f59e0b;font-size:.9rem;margin-bottom:4px;">${'⭐'.repeat(r.stars)}</div>
-          <div style="font-size:.85rem;color:var(--text-secondary);font-style:italic;">"${r.comment}"</div>
-        </div>
-      `).join('')}
-    </div>
-    <button class="btn btn-outline btn-sm" style="width:100%;margin-top:16px;" id="write-review-btn">✍️ Write a Review</button>
-    <div id="review-form" class="hidden" style="margin-top:16px;">
-      <div style="display:flex;gap:8px;margin-bottom:12px;" id="star-input">
-        ${[1,2,3,4,5].map(n => `<button data-star="${n}" class="star-btn" style="font-size:1.5rem;background:none;border:none;cursor:pointer;opacity:.4;transition:all .15s;">⭐</button>`).join('')}
-      </div>
-      <textarea class="form-input" id="review-comment" rows="2" placeholder="Share your experience..." style="resize:none;margin-bottom:10px;"></textarea>
-      <button class="btn btn-primary btn-sm" id="submit-review-btn">Submit Review</button>
-    </div>
-  `;
+  const bars = [5,4,3,2,1].map(n => {
+    const count = ratings.filter(r => r.stars === n).length;
+    const pct = Math.round(count / ratings.length * 100);
+    return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;font-size:.8rem;">' +
+      '<span style="min-width:24px;">' + n + '⭐</span>' +
+      '<div style="flex:1;background:var(--glass-3);border-radius:4px;height:8px;overflow:hidden;">' +
+        '<div style="width:' + pct + '%;height:100%;background:var(--primary);border-radius:4px;transition:width 1s;"></div>' +
+      '</div>' +
+      '<span style="min-width:24px;color:var(--text-secondary);">' + count + '</span>' +
+    '</div>';
+  }).join('');
+
+  const reviewCards = ratings.map(r => 
+    '<div style="padding:14px;background:var(--glass-2);border-radius:var(--radius-sm);border:1px solid var(--border);">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">' +
+        '<div style="font-weight:600;font-size:.9rem;">👤 ' + r.patient + '</div>' +
+        '<div style="font-size:.75rem;color:var(--text-secondary);">' + r.date + '</div>' +
+      '</div>' +
+      '<div style="color:#f59e0b;font-size:.9rem;margin-bottom:4px;">' + '⭐'.repeat(r.stars) + '</div>' +
+      '<div style="font-size:.85rem;color:var(--text-secondary);font-style:italic;">"' + r.comment + '"</div>' +
+    '</div>'
+  ).join('');
+
+  const starBtns = [1,2,3,4,5].map(n => 
+    '<button data-star="' + n + '" class="star-btn" style="font-size:1.5rem;background:none;border:none;cursor:pointer;opacity:.4;transition:all .15s;">⭐</button>'
+  ).join('');
+
+  container.innerHTML = 
+    '<div style="display:flex;align-items:center;gap:20px;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--border);">' +
+      '<div style="text-align:center;">' +
+        '<div style="font-size:3rem;font-weight:900;color:var(--primary);">' + avg + '</div>' +
+        '<div style="color:#f59e0b;font-size:1.2rem;">' + '⭐'.repeat(Math.round(avg)) + '</div>' +
+        '<div style="font-size:.75rem;color:var(--text-secondary);">' + ratings.length + ' reviews</div>' +
+      '</div>' +
+      '<div style="flex:1;">' + bars + '</div>' +
+    '</div>' +
+    '<div style="display:flex;flex-direction:column;gap:12px;">' + reviewCards + '</div>' +
+    '<button class="btn btn-outline btn-sm" style="width:100%;margin-top:16px;" id="write-review-btn">✍️ Write a Review</button>' +
+    '<div id="review-form" class="hidden" style="margin-top:16px;">' +
+      '<div style="display:flex;gap:8px;margin-bottom:12px;" id="star-input">' + starBtns + '</div>' +
+      '<textarea class="form-input" id="review-comment" rows="2" placeholder="Share your experience..." style="resize:none;margin-bottom:10px;"></textarea>' +
+      '<button class="btn btn-primary btn-sm" id="submit-review-btn">Submit Review</button>' +
+    '</div>';
 
   // Wire review form
   let selectedStars = 0;
@@ -680,16 +665,11 @@ export function initOCRScanner() {
 
 function simulateOCR(stream, resultEl, modal) {
   stream?.getTracks().forEach(t => t.stop());
-  const demoText = `Patient: John Doe, 45M
-Rx:
-1. Amoxicillin 500mg — TDS × 7 days
-2. Paracetamol 500mg — SOS
-3. Vitamin C 500mg — OD × 30 days
-Diagnosis: Acute URTI (J06.9)
-Dr. B. Harrington | Date: ${new Date().toLocaleDateString()}`;
+  const demoText = 'Patient: John Doe, 45M\nRx:\n1. Amoxicillin 500mg — TDS x 7 days\n2. Paracetamol 500mg — SOS\n3. Vitamin C 500mg — OD x 30 days\nDiagnosis: Acute URTI (J06.9)\nDr. B. Harrington | Date: ' + new Date().toLocaleDateString();
 
   if (resultEl) {
-    resultEl.innerHTML = `<div style="font-family:monospace;white-space:pre-wrap;font-size:.85rem;color:var(--primary);padding:16px;background:rgba(99,102,241,.05);border-radius:var(--radius-sm);border:1px solid rgba(99,102,241,.2);">${demoText}</div>`;
+    resultEl.innerHTML = '<div id="ocr-demo-box" style="font-family:monospace;white-space:pre-wrap;font-size:.85rem;color:var(--primary);padding:16px;background:rgba(99,102,241,.05);border-radius:var(--radius-sm);border:1px solid rgba(99,102,241,.2);"></div>';
+    document.getElementById('ocr-demo-box').textContent = demoText;
   }
-  import('./toast.js').then(({ toastSuccess }) => toastSuccess('📷 OCR Complete', 'Prescription digitized successfully'));
+  toastSuccess('📷 OCR Complete', 'Prescription digitized successfully');
 }
