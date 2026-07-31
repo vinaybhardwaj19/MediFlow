@@ -322,9 +322,9 @@ function loadReal3DHumanScanModel() {
       if (scanMesh) {
           scanMesh.scale.set(1.1, 1.1, 1.1);
           scanMesh.position.set(0, 7.5, 0.2); // Aligns over the head/face area
-          scanMesh.material = new THREE.MeshPhysicalMaterial({
-              color: 0x0ea5e9, metalness: 0.2, roughness: 0.15, transmission: 0.8,
-              transparent: true, opacity: 0.85, wireframe: false
+          scanMesh.material = new THREE.MeshStandardMaterial({
+              color: 0x0ea5e9, metalness: 0.3, roughness: 0.2,
+              transparent: true, opacity: 0.85, side: THREE.DoubleSide
           });
           scanMesh.userData = { region: 'head', isHighlightable: true };
           skinGroup.add(scanMesh);
@@ -379,75 +379,69 @@ function createVisualPart(parentGroup, geo, mat, x, y, z, region, extraData = {}
     return mesh;
 }
 
-// High-Poly 3D Printing STL Surface Mesh Generator
 function buildHighPolySkinSystem(prof) {
-    const material = new THREE.MeshPhysicalMaterial({
-        color: 0x0ea5e9, metalness: 0.15, roughness: 0.15, transmission: 0.85,
+    const material = new THREE.MeshStandardMaterial({
+        color: 0x0ea5e9, metalness: 0.35, roughness: 0.25,
         transparent: true, opacity: 0.85, side: THREE.DoubleSide
     });
 
-    // 1. High-Poly Smooth Head & Face Contour
-    const headGeo = new THREE.SphereGeometry(1.15, 48, 48);
+    // 1. High-Poly Head & Face Contour
+    const headGeo = new THREE.SphereGeometry(1.15, 32, 32);
     headGeo.scale(prof.headScale * 0.95, prof.headScale * 1.12, prof.headScale * 1.02);
     createVisualPart(skinGroup, headGeo, material.clone(), 0, 7.6, 0.1, 'head');
 
     // 2. Neck
-    createVisualPart(skinGroup, new THREE.CylinderGeometry(0.44, 0.58, 1.1, 32), material.clone(), 0, 6.3, 0, 'chest');
+    createVisualPart(skinGroup, new THREE.CylinderGeometry(0.44, 0.58, 1.1, 24), material.clone(), 0, 6.3, 0, 'chest');
 
-    // 3. High-Poly Torso Surface Mesh (Smooth Bezier Lathe Curve)
-    const points = [];
-    // Define exact anatomical cross-section profile points from neck base down to pelvic floor
-    points.push(new THREE.Vector2(0.58, 6.3));   // Neck base
-    points.push(new THREE.Vector2(1.2, 5.8));    // Trapezius slope
-    points.push(new THREE.Vector2(1.95, 5.2));   // Shoulder clavicle width
-    points.push(new THREE.Vector2(1.85, 4.4));   // Upper Chest (Pectoralis)
-    points.push(new THREE.Vector2(1.5, 3.4));    // Rib cage slope
-    points.push(new THREE.Vector2(1.35, 2.4));   // Waist constriction
-    points.push(new THREE.Vector2(1.55, 1.4));   // Iliac crest / Hips
-    points.push(new THREE.Vector2(1.4, 0.6));    // Pelvic floor
-    points.push(new THREE.Vector2(0.3, 0.5));    // Base center close
+    // 3. Chest & Upper Torso (Broad shoulders tapering down to ribs)
+    const chestGeo = new THREE.CylinderGeometry(1.9, 1.45, 2.7, 32);
+    chestGeo.scale(1.15, 1.0, 0.75); // Anatomical flattening
+    createVisualPart(skinGroup, chestGeo, material.clone(), 0, 4.6, 0, 'chest');
 
-    const torsoLathe = new THREE.LatheGeometry(points, 64);
-    torsoLathe.scale(1.0, 1.0, 0.72); // Anatomical flattening (depth vs width)
-    torsoLathe.computeVertexNormals();
-    createVisualPart(skinGroup, torsoLathe, material.clone(), 0, 0, 0, 'chest');
+    // 4. Abdomen & Waist (Tapered waist expanding to hips)
+    const abGeo = new THREE.CylinderGeometry(1.4, 1.55, 2.2, 32);
+    abGeo.scale(1.1, 1.0, 0.72);
+    createVisualPart(skinGroup, abGeo, material.clone(), 0, 2.25, 0, 'abdomen');
 
-    // 4. Anatomical Deltoid Shoulder Nodes
-    createVisualPart(skinGroup, new THREE.SphereGeometry(0.65, 24, 24), material.clone(), -2.0, 5.3, 0, 'arms');
-    createVisualPart(skinGroup, new THREE.SphereGeometry(0.65, 24, 24), material.clone(), 2.0, 5.3, 0, 'arms');
+    // 5. Pelvis & Hips
+    const pelvisGeo = new THREE.SphereGeometry(1.4, 24, 24);
+    pelvisGeo.scale(1.15, 0.65, 0.75);
+    createVisualPart(skinGroup, pelvisGeo, material.clone(), 0, 1.0, 0, 'abdomen');
 
-    // 5. High-Poly Upper Arm & Forearm Mesh
-    const armPoints = [];
-    armPoints.push(new THREE.Vector2(0.48, 5.2)); // Axilla top
-    armPoints.push(new THREE.Vector2(0.46, 4.1)); // Biceps belly
-    armPoints.push(new THREE.Vector2(0.38, 2.9)); // Elbow joint
-    armPoints.push(new THREE.Vector2(0.42, 2.0)); // Brachioradialis forearm muscle
-    armPoints.push(new THREE.Vector2(0.28, 0.4)); // Wrist
-    const armMeshGeo = new THREE.LatheGeometry(armPoints, 32);
-    armMeshGeo.computeVertexNormals();
+    // 6. Shoulders (Deltoid Nodes)
+    createVisualPart(skinGroup, new THREE.SphereGeometry(0.65, 20, 20), material.clone(), -2.0, 5.3, 0, 'arms');
+    createVisualPart(skinGroup, new THREE.SphereGeometry(0.65, 20, 20), material.clone(), 2.0, 5.3, 0, 'arms');
 
-    const leftArm = createVisualPart(skinGroup, armMeshGeo.clone(), -2.25, -0.4, 0, 'arms');
-    const rightArm = createVisualPart(skinGroup, armMeshGeo.clone(), 2.25, -0.4, 0, 'arms');
+    // 7. Upper Arms (Biceps/Triceps Taper)
+    createVisualPart(skinGroup, new THREE.CylinderGeometry(0.48, 0.38, 2.4, 20), material.clone(), -2.25, 4.1, 0, 'arms');
+    createVisualPart(skinGroup, new THREE.CylinderGeometry(0.48, 0.38, 2.4, 20), material.clone(), 2.25, 4.1, 0, 'arms');
 
-    // Hands
+    // 8. Elbow Joints
+    createVisualPart(skinGroup, new THREE.SphereGeometry(0.42, 16, 16), material.clone(), -2.25, 2.8, 0, 'arms');
+    createVisualPart(skinGroup, new THREE.SphereGeometry(0.42, 16, 16), material.clone(), 2.25, 2.8, 0, 'arms');
+
+    // 9. Forearms & Wrists
+    createVisualPart(skinGroup, new THREE.CylinderGeometry(0.38, 0.28, 2.4, 20), material.clone(), -2.25, 1.5, 0, 'arms');
+    createVisualPart(skinGroup, new THREE.CylinderGeometry(0.38, 0.28, 2.4, 20), material.clone(), 2.25, 1.5, 0, 'arms');
+
+    // 10. Hands
     const handGeo = new THREE.BoxGeometry(0.35, 0.75, 0.6);
-    createVisualPart(skinGroup, handGeo, material.clone(), -2.25, -0.2, 0, 'arms');
-    createVisualPart(skinGroup, handGeo, material.clone(), 2.25, -0.2, 0, 'arms');
+    createVisualPart(skinGroup, handGeo, material.clone(), -2.25, 0.0, 0, 'arms');
+    createVisualPart(skinGroup, handGeo, material.clone(), 2.25, 0.0, 0, 'arms');
 
-    // 6. High-Poly Leg Mesh (Quadriceps, Knee, Calf Lofting)
-    const legPoints = [];
-    legPoints.push(new THREE.Vector2(0.72, 1.0));   // Hip joint top
-    legPoints.push(new THREE.Vector2(0.68, -0.5));  // Mid-thigh quadriceps
-    legPoints.push(new THREE.Vector2(0.52, -2.1));  // Knee constriction / Patella
-    legPoints.push(new THREE.Vector2(0.56, -3.2));  // Gastrocnemius Calf muscle bulge
-    legPoints.push(new THREE.Vector2(0.32, -4.8));  // Ankle joint
-    const legMeshGeo = new THREE.LatheGeometry(legPoints, 32);
-    legMeshGeo.computeVertexNormals();
+    // 11. Thighs (Quadriceps/Hamstrings Taper)
+    createVisualPart(skinGroup, new THREE.CylinderGeometry(0.68, 0.52, 2.9, 24), material.clone(), -0.95, -0.6, 0, 'legs');
+    createVisualPart(skinGroup, new THREE.CylinderGeometry(0.68, 0.52, 2.9, 24), material.clone(), 0.95, -0.6, 0, 'legs');
 
-    createVisualPart(skinGroup, legMeshGeo.clone(), -0.95, 0, 0, 'legs');
-    createVisualPart(skinGroup, legMeshGeo.clone(), 0.95, 0, 0, 'legs');
+    // 12. Knee Joints (Patella Bulges)
+    createVisualPart(skinGroup, new THREE.SphereGeometry(0.5, 16, 16), material.clone(), -0.95, -2.1, 0.05, 'legs');
+    createVisualPart(skinGroup, new THREE.SphereGeometry(0.5, 16, 16), material.clone(), 0.95, -2.1, 0.05, 'legs');
 
-    // Feet
+    // 13. Calves & Shins (Lower Legs)
+    createVisualPart(skinGroup, new THREE.CylinderGeometry(0.48, 0.32, 2.9, 24), material.clone(), -0.95, -3.6, 0, 'legs');
+    createVisualPart(skinGroup, new THREE.CylinderGeometry(0.48, 0.32, 2.9, 24), material.clone(), 0.95, -3.6, 0, 'legs');
+
+    // 14. Feet
     const footGeo = new THREE.BoxGeometry(0.55, 0.4, 1.15);
     createVisualPart(skinGroup, footGeo, material.clone(), -0.95, -5.1, 0.25, 'legs');
     createVisualPart(skinGroup, footGeo, material.clone(), 0.95, -5.1, 0.25, 'legs');
